@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 const secretKey = process.env.JWT_SECRET || "default_secret_key_change_me_in_production_123456";
 const encodedKey = new TextEncoder().encode(secretKey);
