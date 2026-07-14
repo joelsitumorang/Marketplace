@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { User } from "@prisma/client";
+import type { User } from "@prisma/client";
 import { UserPlus, Shield, User as UserIcon, MapPin, Mail, Pencil, X } from "lucide-react";
 
 export default function ManageUsersClient({ initialUsers }: { initialUsers: User[] }) {

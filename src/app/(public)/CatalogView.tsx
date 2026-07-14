@@ -1,5 +1,5 @@
 "use client";
-import { Status, AuctionItem } from '@prisma/client';
+import type { AuctionItem } from '@prisma/client';
 
 import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -353,7 +353,7 @@ export default function CatalogView({
             ))
           ) : displayedItems.length > 0 ? (
           displayedItems.map((item, index) => {
-            const isUnavailable = item.status === Status.Terjual;
+            const isUnavailable = item.status === "Terjual";
             const conditionLabel = item.kondisi;
             
             // Mock recommendation logic
