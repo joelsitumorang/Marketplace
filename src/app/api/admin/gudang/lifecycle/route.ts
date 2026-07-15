@@ -20,6 +20,8 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const tab = searchParams.get("tab");
+  const limit = parseInt(searchParams.get("limit") || "50");
+  const skip = parseInt(searchParams.get("skip") || "0");
 
   try {
     let whereClause: any = {};
@@ -36,13 +38,20 @@ export async function GET(request: Request) {
       whereClause = { status: { in: [PawnStatus.TERJUAL, PawnStatus.TEBUS] } };
     }
 
-    const contracts = await prisma.pawnContract.findMany({
-      where: whereClause,
-      include: { physicalItem: true },
-      orderBy: { createdAt: "desc" },
-    });
+    const [contracts, total] = await Promise.all([
+      prisma.pawnContract.findMany({
+        where: whereClause,
+        include: { physicalItem: true },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.pawnContract.count({
+        where: whereClause,
+      }),
+    ]);
 
-    return NextResponse.json({ success: true, data: contracts });
+    return NextResponse.json({ success: true, data: contracts, total });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }

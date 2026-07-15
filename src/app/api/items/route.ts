@@ -115,6 +115,27 @@ export async function GET(request: Request) {
     const searchQuery = searchParams.get("q");
     const nomorInduk = searchParams.get("nomorInduk");
 
+    const selectFields = {
+      id: true,
+      sku: true,
+      branchName: true,
+      title: true,
+      category: true,
+      price: true,
+      status: true,
+      images: true,
+      whatsappNumber: true,
+      kondisi: true,
+      isMarketplaceVisible: true,
+      hasWarranty: true,
+      nomorInduk: true,
+      variantImageUrl: true,
+      youtubeUrl: true,
+      description: true,
+      defects: true,
+      hargaJual: true,
+    };
+
     if (nomorInduk) {
       const items = await prisma.auctionItem.findMany({
         where: {
@@ -122,6 +143,7 @@ export async function GET(request: Request) {
           status: Status.Tersedia,
           isMarketplaceVisible: true,
         },
+        select: selectFields,
         orderBy: { id: "asc" },
       });
       return NextResponse.json({
@@ -153,6 +175,7 @@ export async function GET(request: Request) {
 
     const items = await prisma.auctionItem.findMany({
       where,
+      select: selectFields,
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,

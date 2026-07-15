@@ -508,32 +508,58 @@ export default function ItemsTableClient({ items }: { items: Item[] }) {
     const inputClassName =
       "w-full bg-white border border-slate-300 rounded-xl px-4 py-3 md:py-2.5 min-h-[44px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all shadow-sm text-base md:text-sm";
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (!files || files.length === 0) return;
-
+    const uploadImage = async (file: File): Promise<string> => {
       const options = {
         maxSizeMB: 0.5,
         maxWidthOrHeight: 1024,
         useWebWorker: true,
       };
 
+      const compressedFile = await imageCompression(file, options);
+      const compressedFileObj = new File([compressedFile], file.name, {
+        type: compressedFile.type,
+        lastModified: Date.now(),
+      });
+
+      const formData = new FormData();
+      formData.append("file", compressedFileObj);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Gagal mengunggah gambar ke server.");
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || "Gagal mengunggah gambar.");
+      }
+
+      return data.url;
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      setActionLoading(true);
       const newImages: any[] = [];
       for (let i = 0; i < files.length; i++) {
         try {
           const file = files[i];
-          const compressedFile = await imageCompression(file, options);
-          const reader = new FileReader();
-          const result = await new Promise<string>((resolve) => {
-            reader.readAsDataURL(compressedFile);
-            reader.onloadend = () => resolve(reader.result as string);
-          });
-          newImages.push({ url: result });
-        } catch (err) {
-          console.error("Failed to compress image:", err);
+          const url = await uploadImage(file);
+          newImages.push({ url });
+        } catch (err: any) {
+          console.error("Failed to upload image:", err);
+          alert(err.message || `Gagal mengunggah gambar ke-${i + 1}`);
         }
       }
       setCompressedImages((prev) => [...prev, ...newImages]);
+      setActionLoading(false);
       e.target.value = "";
     };
 

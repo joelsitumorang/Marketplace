@@ -48,6 +48,9 @@ export async function GET(request: Request) {
       ];
     }
 
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const skip = parseInt(searchParams.get("skip") || "0");
+
     const items = await prisma.physicalItem.findMany({
       where,
       include: {
@@ -57,6 +60,8 @@ export async function GET(request: Request) {
         _count: { select: { auctionItems: true } },
       },
       orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
     });
 
     // If filtering by status, post-filter by latest contract status

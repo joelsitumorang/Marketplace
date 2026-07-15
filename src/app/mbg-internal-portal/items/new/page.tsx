@@ -73,36 +73,60 @@ function AddItemForm() {
     );
   };
 
-  const handleVariantImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
+  const uploadImage = async (file: File): Promise<string> => {
     const options = {
       maxSizeMB: 0.5,
       maxWidthOrHeight: 1024,
       useWebWorker: true,
     };
 
-    try {
-      const file = files[0];
-      const compressedFile = await imageCompression(file, options);
+    const compressedFile = await imageCompression(file, options);
+    const compressedFileObj = new File([compressedFile], file.name, {
+      type: compressedFile.type,
+      lastModified: Date.now(),
+    });
 
-      const reader = new FileReader();
-      const result = await new Promise<string>((resolve) => {
-        reader.readAsDataURL(compressedFile);
-        reader.onloadend = () => resolve(reader.result as string);
-      });
+    const formData = new FormData();
+    formData.append("file", compressedFileObj);
+
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.message || "Gagal mengunggah gambar ke server.");
+    }
+
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.message || "Gagal mengunggah gambar.");
+    }
+
+    return data.url;
+  };
+
+  const handleVariantImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setLoading(true);
+      const url = await uploadImage(files[0]);
 
       setVariants((prev) =>
         prev.map((v, i) =>
           i === index
-            ? { ...v, imageUrl: result, imageName: file.name }
+            ? { ...v, imageUrl: url, imageName: files[0].name }
             : v
         )
       );
-    } catch (err) {
-      console.error("Failed to compress variant image:", err);
-      alert("Gagal mengkompres gambar untuk sub-barang.");
+    } catch (err: any) {
+      console.error("Failed to upload variant image:", err);
+      alert(err.message || "Gagal mengunggah gambar untuk sub-barang.");
+    } finally {
+      setLoading(false);
     }
     e.target.value = "";
   };
@@ -173,41 +197,31 @@ function AddItemForm() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const options = {
-      maxSizeMB: 0.5,
-      maxWidthOrHeight: 1024,
-      useWebWorker: true,
-    };
-
+    setLoading(true);
     const newImages: CompressedImage[] = [];
 
     for (let i = 0; i < files.length; i++) {
       try {
         const file = files[i];
-        const compressedFile = await imageCompression(file, options);
-
-        const reader = new FileReader();
-        const result = await new Promise<string>((resolve) => {
-          reader.readAsDataURL(compressedFile);
-          reader.onloadend = () => resolve(reader.result as string);
-        });
+        const url = await uploadImage(file);
 
         newImages.push({
-          url: result,
+          url: url,
           originalSize: file.size,
-          compressedSize: compressedFile.size,
+          compressedSize: file.size,
         });
-      } catch (err) {
-        console.error("Failed to compress image:", err);
+      } catch (err: any) {
+        console.error("Failed to upload image:", err);
         setNotification({
           isOpen: true,
           type: "error",
-          message: `Gagal mengkompres gambar ke-${i + 1}`,
+          message: err.message || `Gagal mengunggah gambar ke-${i + 1}`,
         });
       }
     }
 
     setCompressedImages((prev) => [...prev, ...newImages]);
+    setLoading(false);
     e.target.value = "";
   };
 

@@ -128,6 +128,8 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
   // ─── Supabase Realtime Stock Sync ──────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient();
+    if (!supabase) return;
+
     const channel = supabase
       .channel('realtime-stock-sync')
       .on(

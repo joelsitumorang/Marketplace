@@ -13,6 +13,14 @@ export async function GET(request: Request) {
   try {
     const item = await prisma.auctionItem.findUnique({
       where: { sku },
+      select: {
+        id: true,
+        sku: true,
+        title: true,
+        price: true,
+        branchName: true,
+        status: true,
+      }
     });
 
     if (!item) {

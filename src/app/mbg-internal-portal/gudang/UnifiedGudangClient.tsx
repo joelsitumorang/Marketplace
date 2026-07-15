@@ -76,6 +76,13 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
   const [lifecycleData, setLifecycleData] = useState<any[]>([]);
   const [loadingLifecycle, setLoadingLifecycle] = useState(false);
   const [skuFilter, setSkuFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 50;
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab]);
 
   const [formBaru, setFormBaru] = useState({
     uniqueCode: "", itemName: "", category: "ELEKTRONIK", serialNumber: "", 
@@ -146,14 +153,18 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
   const [formattedAuctionSellingPrice, setFormattedAuctionSellingPrice] = useState("");
   const [auctionImages, setAuctionImages] = useState("");
 
-  const fetchLifecycleData = async (tab: TabType) => {
+  const fetchLifecycleData = async (tab: TabType, currentPage: number) => {
     if (tab === "BARU") return;
     setLoadingLifecycle(true);
     setSkuFilter("");
     try {
-      const res = await fetch(`/api/admin/gudang/lifecycle?tab=${tab}`);
+      const skip = (currentPage - 1) * itemsPerPage;
+      const res = await fetch(`/api/admin/gudang/lifecycle?tab=${tab}&limit=${itemsPerPage}&skip=${skip}`);
       const json = await res.json();
-      if (json.success) setLifecycleData(json.data);
+      if (json.success) {
+        setLifecycleData(json.data);
+        setTotalItems(json.total || 0);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -162,9 +173,9 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
 
   useEffect(() => {
     if (viewMode === "LIFECYCLE") {
-      fetchLifecycleData(activeTab);
+      fetchLifecycleData(activeTab, page);
     }
-  }, [activeTab, viewMode]);
+  }, [activeTab, viewMode, page]);
 
   const filteredLifecycleData = React.useMemo(() => {
     let data = lifecycleData;
@@ -217,7 +228,7 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
         showToast("Kontrak berhasil diperpanjang!");
       }
       setExtensionModalOpen(false);
-      fetchLifecycleData(activeTab);
+      fetchLifecycleData(activeTab, page);
     }
   };
 
@@ -230,7 +241,7 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
     });
     if (res.ok) {
       showToast("Barang berhasil ditebus!");
-      fetchLifecycleData(activeTab);
+      fetchLifecycleData(activeTab, page);
     }
   };
 
@@ -896,6 +907,31 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
                     </table>
                   )}
                 </div>
+                {filteredLifecycleData.length > 0 && (
+                  <div className="flex justify-between items-center px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+                    <span className="text-xs text-slate-500 font-medium">
+                      Menampilkan {filteredLifecycleData.length} data (Total: {totalItems} data)
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={page === 1}
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                      >
+                        Sebelumnya
+                      </button>
+                      <button
+                        type="button"
+                        disabled={page * itemsPerPage >= totalItems}
+                        onClick={() => setPage(p => p + 1)}
+                        className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                      >
+                        Berikutnya
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

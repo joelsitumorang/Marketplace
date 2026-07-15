@@ -8,6 +8,15 @@ import ItemsTableClient from "./ItemsTableClient";
 export default async function AdminItemsPage() {
   const items = await prisma.auctionItem.findMany({
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      sku: true,
+      title: true,
+      branchName: true,
+      price: true,
+      status: true,
+      isMarketplaceVisible: true,
+    }
   });
 
   // Serialize Decimal to number for client component
