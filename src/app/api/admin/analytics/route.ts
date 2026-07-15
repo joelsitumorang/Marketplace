@@ -195,16 +195,15 @@ export async function GET(request: Request) {
       }
     }) : [];
 
-    const groupStatsMap: { [key: number]: { unsold: number, totalChildren: number } } = {};
+    const groupStatsMap: { [key: number]: { unsold: number, total: number } } = {};
     groupItems.forEach(item => {
-      const parentId = item.parentId;
-      if (parentId === null) return; // skip parent itself
-      if (!groupStatsMap[parentId]) {
-        groupStatsMap[parentId] = { unsold: 0, totalChildren: 0 };
+      const groupId = item.parentId || item.id;
+      if (!groupStatsMap[groupId]) {
+        groupStatsMap[groupId] = { unsold: 0, total: 0 };
       }
-      groupStatsMap[parentId].totalChildren += 1;
+      groupStatsMap[groupId].total += 1;
       if (item.status !== Status.Terjual) {
-        groupStatsMap[parentId].unsold += 1;
+        groupStatsMap[groupId].unsold += 1;
       }
     });
 
@@ -212,7 +211,7 @@ export async function GET(request: Request) {
     const recentTransactions = recentSalesSubset.map(tx => {
       const parentId = tx.item?.parentId || tx.item?.id || null;
       const stats = parentId ? groupStatsMap[parentId] : null;
-      const isPartiallySold = stats ? (stats.unsold > 0 && stats.totalChildren > 0) : false;
+      const isPartiallySold = stats ? (stats.unsold > 0 && stats.total > 0) : false;
       return {
         id: tx.id,
         sku: tx.sku,
@@ -223,7 +222,7 @@ export async function GET(request: Request) {
         soldPrice: Number(tx.soldPrice),
         isPartiallySold,
         unsoldChildrenCount: stats ? stats.unsold : 0,
-        totalChildrenCount: stats ? stats.totalChildren : 0,
+        totalChildrenCount: stats ? stats.total : 0,
       };
     });
 
