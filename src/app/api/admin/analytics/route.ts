@@ -95,6 +95,8 @@ export async function GET(request: Request) {
       include: {
         item: {
           select: {
+            id: true,
+            parentId: true,
             title: true,
             category: true,
             nomorInduk: true,
@@ -170,11 +172,20 @@ export async function GET(request: Request) {
 
     // Fetch variant-specific partial status tracking for the transactions
     const recentSalesSubset = sales.slice(0, 15);
-    const nomorInduks = Array.from(new Set(recentSalesSubset.map(tx => tx.item?.nomorInduk).filter(Boolean)));
+    const parentIds = Array.from(
+      new Set(
+        recentSalesSubset
+          .map(tx => tx.item?.parentId || tx.item?.id)
+          .filter(Boolean) as number[]
+      )
+    );
 
-    const groupItems = nomorInduks.length > 0 ? await prisma.auctionItem.findMany({
+    const groupItems = parentIds.length > 0 ? await prisma.auctionItem.findMany({
       where: {
-        nomorInduk: { in: nomorInduks as string[] }
+        OR: [
+          { id: { in: parentIds } },
+          { parentId: { in: parentIds } }
+        ]
       },
       select: {
         id: true,
@@ -184,22 +195,23 @@ export async function GET(request: Request) {
       }
     }) : [];
 
-    const groupStatsMap: { [key: string]: { unsold: number, totalChildren: number } } = {};
+    const groupStatsMap: { [key: number]: { unsold: number, totalChildren: number } } = {};
     groupItems.forEach(item => {
-      if (!item.nomorInduk || item.parentId === null) return;
-      if (!groupStatsMap[item.nomorInduk]) {
-        groupStatsMap[item.nomorInduk] = { unsold: 0, totalChildren: 0 };
+      const parentId = item.parentId;
+      if (parentId === null) return; // skip parent itself
+      if (!groupStatsMap[parentId]) {
+        groupStatsMap[parentId] = { unsold: 0, totalChildren: 0 };
       }
-      groupStatsMap[item.nomorInduk].totalChildren += 1;
+      groupStatsMap[parentId].totalChildren += 1;
       if (item.status !== Status.Terjual) {
-        groupStatsMap[item.nomorInduk].unsold += 1;
+        groupStatsMap[parentId].unsold += 1;
       }
     });
 
     // 7. Format recent transactions
     const recentTransactions = recentSalesSubset.map(tx => {
-      const nomInduk = tx.item?.nomorInduk || null;
-      const stats = nomInduk ? groupStatsMap[nomInduk] : null;
+      const parentId = tx.item?.parentId || tx.item?.id || null;
+      const stats = parentId ? groupStatsMap[parentId] : null;
       const isPartiallySold = stats ? (stats.unsold > 0 && stats.totalChildren > 0) : false;
       return {
         id: tx.id,
