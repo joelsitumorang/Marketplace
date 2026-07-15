@@ -5,19 +5,46 @@ import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import ItemsTableClient from "./ItemsTableClient";
 
-export default async function AdminItemsPage() {
-  const items = await prisma.auctionItem.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      sku: true,
-      title: true,
-      branchName: true,
-      price: true,
-      status: true,
-      isMarketplaceVisible: true,
-    }
-  });
+type Props = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function AdminItemsPage({ searchParams }: Props) {
+  const resolvedParams = await searchParams;
+  const currentPage = Math.max(1, Number(resolvedParams.page || "1"));
+  const limit = Math.max(1, Number(resolvedParams.limit || "10"));
+  const q = typeof resolvedParams.q === "string" ? resolvedParams.q : "";
+
+  const skip = (currentPage - 1) * limit;
+
+  const where: any = {};
+  if (q) {
+    where.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { sku: { contains: q, mode: "insensitive" } },
+    ];
+  }
+
+  const [items, totalCount] = await prisma.$transaction([
+    prisma.auctionItem.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        sku: true,
+        title: true,
+        branchName: true,
+        price: true,
+        status: true,
+        isMarketplaceVisible: true,
+      }
+    }),
+    prisma.auctionItem.count({ where })
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
   // Serialize Decimal to number for client component
   const serializedItems = items.map((item) => ({
@@ -43,7 +70,13 @@ export default async function AdminItemsPage() {
         </Link>
       </div>
 
-      <ItemsTableClient items={serializedItems} />
+      <ItemsTableClient 
+        items={serializedItems}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        initialSearchQuery={q}
+      />
     </div>
   );
 }

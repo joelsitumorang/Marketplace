@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   ExternalLink,
   Printer,
@@ -43,16 +43,71 @@ type SortDirection = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 20;
 
-export default function ItemsTableClient({ items }: { items: Item[] }) {
-  const [searchQuery, setSearchQuery] = useState("");
+export default function ItemsTableClient({
+  items,
+  currentPage,
+  totalPages,
+  totalCount,
+  initialSearchQuery,
+}: {
+  items: Item[];
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  initialSearchQuery: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || "");
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [currentPage, setCurrentPage] = useState(1);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const updateUrl = useCallback(
+    (newPage: number, newQuery: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", String(newPage));
+      if (newQuery.trim()) {
+        params.set("q", newQuery.trim());
+      } else {
+        params.delete("q");
+      }
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, searchParams]
+  );
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      updateUrl(newPage, searchQuery);
+    }
+  };
+
+  // Synchronize searchQuery with searchParams change (e.g. back/forward navigation)
+  useEffect(() => {
+    const currentQ = searchParams.get("q") || "";
+    if (searchQuery !== currentQ) {
+      setSearchQuery(currentQ);
+    }
+  }, [searchParams]);
+
+  // Debounce search query updates to URL
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentQ = searchParams.get("q") || "";
+      if (searchQuery.trim() !== currentQ.trim()) {
+        updateUrl(1, searchQuery);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchParams, updateUrl]);
 
   // Overridden product statuses and transaction details
   const [overriddenStatuses, setOverriddenStatuses] = useState<Record<number, {
@@ -162,8 +217,6 @@ export default function ItemsTableClient({ items }: { items: Item[] }) {
   const [compressedImages, setCompressedImages] = useState<any[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  const router = useRouter();
-
   // Fetch user role on mount for RBAC
   useEffect(() => {
     fetch("/api/admin/users/me")
@@ -203,23 +256,11 @@ export default function ItemsTableClient({ items }: { items: Item[] }) {
     return name;
   };
 
-  // 1. Filter by search
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        item.sku.toLowerCase().includes(q) ||
-        item.title.toLowerCase().includes(q)
-      );
-    });
-  }, [items, searchQuery]);
-
-  // 2. Sort
+  // 1. Sort current page items
   const sortedItems = useMemo(() => {
-    if (!sortField) return filteredItems;
+    if (!sortField) return items;
 
-    return [...filteredItems].sort((a, b) => {
+    return [...items].sort((a, b) => {
       let cmp = 0;
       switch (sortField) {
         case "sku":
@@ -248,19 +289,9 @@ export default function ItemsTableClient({ items }: { items: Item[] }) {
       }
       return sortDirection === "asc" ? cmp : -cmp;
     });
-  }, [filteredItems, sortField, sortDirection, getEffectiveItemStatus]);
+  }, [items, sortField, sortDirection, getEffectiveItemStatus]);
 
-  // 3. Paginate
-  const totalPages = Math.max(1, Math.ceil(sortedItems.length / ITEMS_PER_PAGE));
-  const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return sortedItems.slice(start, start + ITEMS_PER_PAGE);
-  }, [sortedItems, currentPage]);
-
-  // Reset page on filter/sort change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, sortField, sortDirection]);
+  const paginatedItems = sortedItems;
 
   // Sort toggle handler
   const handleSort = (field: SortField) => {
@@ -471,32 +502,28 @@ export default function ItemsTableClient({ items }: { items: Item[] }) {
 
   // ──── Pagination Controls ────
   const PaginationBar = () => {
-    if (sortedItems.length <= ITEMS_PER_PAGE) return null;
+    if (totalCount === 0) return null;
     return (
-      <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
-        <p className="text-sm text-slate-500 font-medium">
-          Halaman <span className="text-slate-900 font-bold">{currentPage}</span> dari{" "}
-          <span className="text-slate-900 font-bold">{totalPages}</span>
-          <span className="hidden sm:inline text-slate-400 ml-2">
-            ({sortedItems.length} barang)
-          </span>
-        </p>
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-center px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+        <span className="text-xs text-slate-500 font-medium">
+          Halaman {currentPage} dari {totalPages} (Total {totalCount} Barang)
+        </span>
+        <div className="flex gap-2">
           <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            type="button"
             disabled={currentPage === 1}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[44px] justify-center"
+            onClick={() => handlePageChange(currentPage - 1)}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Sebelumnya</span>
+            Sebelumnya
           </button>
           <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            type="button"
             disabled={currentPage === totalPages}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[44px] justify-center"
+            onClick={() => handlePageChange(currentPage + 1)}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
-            <span className="hidden sm:inline">Berikutnya</span>
-            <ChevronRight className="w-4 h-4" />
+            Berikutnya
           </button>
         </div>
       </div>
@@ -909,7 +936,7 @@ export default function ItemsTableClient({ items }: { items: Item[] }) {
       {/* Results count when searching */}
       {searchQuery.trim() && (
         <p className="text-xs text-slate-500 font-medium px-1">
-          Menampilkan {filteredItems.length} dari {items.length} barang
+          Menampilkan {items.length} dari {totalCount} barang
         </p>
       )}
 
