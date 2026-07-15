@@ -79,8 +79,8 @@ async function simulateUserVisit() {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Mode A: Sequential Hits
-async function runSequentialMode() {
-  console.log(`\nStarting Mode A: Sequential Hit Test (100 visits, 200ms delay)...`);
+async function runSequentialMode(limitHits = 100) {
+  console.log(`\nStarting Mode A: Sequential Hit Test (${limitHits} visits, 200ms delay)...`);
   const start = Date.now();
   
   let successCount = 0;
@@ -88,7 +88,7 @@ async function runSequentialMode() {
   let totalBytes = 0;
   let totalDuration = 0;
 
-  for (let i = 1; i <= 100; i++) {
+  for (let i = 1; i <= limitHits; i++) {
     const result = await simulateUserVisit();
     if (result.success) {
       successCount++;
@@ -98,7 +98,7 @@ async function runSequentialMode() {
     }
     totalDuration += result.duration;
     
-    process.stdout.write(`\rProgress: ${i}/100 visits | Successful: ${successCount} | Failed: ${failCount} | Total Bytes: ${formatBytes(totalBytes)}`);
+    process.stdout.write(`\rProgress: ${i}/${limitHits} visits | Successful: ${successCount} | Failed: ${failCount} | Total Bytes: ${formatBytes(totalBytes)}`);
     await sleep(200);
   }
 
@@ -145,6 +145,7 @@ function printSummary(modeName, success, fail, timeSec, bytes) {
 
 async function main() {
   const mode = process.argv[2] ? process.argv[2].toUpperCase() : 'A';
+  const hitCount = process.argv[3] ? parseInt(process.argv[3], 10) : 100;
 
   console.log(`==================================================`);
   console.log(` AUTOMATED BANDWIDTH & LOAD TESTING BENCHMARK      `);
@@ -153,7 +154,7 @@ async function main() {
   console.log(`Target API URL  : ${API_URL}`);
   
   if (mode === 'A') {
-    await runSequentialMode();
+    await runSequentialMode(hitCount);
   } else if (mode === 'B') {
     await runConcurrentMode();
   } else {
