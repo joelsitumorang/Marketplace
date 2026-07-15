@@ -151,6 +151,8 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
   const [auctionNotes, setAuctionNotes] = useState("");
   const [auctionSellingPrice, setAuctionSellingPrice] = useState("");
   const [formattedAuctionSellingPrice, setFormattedAuctionSellingPrice] = useState("");
+  const [auctionHargaMasuk, setAuctionHargaMasuk] = useState("");
+  const [formattedAuctionHargaMasuk, setFormattedAuctionHargaMasuk] = useState("");
   const [auctionImages, setAuctionImages] = useState("");
 
   const fetchLifecycleData = async (tab: TabType, currentPage: number) => {
@@ -265,6 +267,18 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
     setAuctionSellingPrice(val);
   };
 
+  const handleAuctionHargaMasukChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, "");
+    if (!val) {
+      setFormattedAuctionHargaMasuk("");
+      setAuctionHargaMasuk("");
+      return;
+    }
+    const formatted = new Intl.NumberFormat("id-ID").format(Number(val));
+    setFormattedAuctionHargaMasuk(formatted);
+    setAuctionHargaMasuk(val);
+  };
+
   const handlePostKatalogFromForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auctionSellingPrice) {
@@ -285,6 +299,7 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
         action: "POST_KATALOG", 
         contractId: auctionPrepTarget.id, 
         sellingPrice: auctionSellingPrice, 
+        hargaMasuk: auctionHargaMasuk || null,
         notes: auctionNotes,
         images: imagesArray
       })
@@ -296,6 +311,8 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
       setAuctionNotes("");
       setAuctionSellingPrice("");
       setFormattedAuctionSellingPrice("");
+      setAuctionHargaMasuk("");
+      setFormattedAuctionHargaMasuk("");
       setAuctionImages("");
       setActiveTab("ETALASE_LELANG");
     } else {
@@ -666,6 +683,16 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
                           onChange={handleAuctionSellingPriceChange} 
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-slate-800">Harga Masuk / Modal (Rp) <span className="text-red-500">*</span></label>
+                        <input 
+                          required 
+                          placeholder="Contoh: 1.200.000" 
+                          className="w-full border border-slate-200 text-slate-900 placeholder-slate-400 p-3.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono font-medium" 
+                          value={formattedAuctionHargaMasuk} 
+                          onChange={handleAuctionHargaMasukChange} 
+                        />
+                      </div>
                       <div className="space-y-2 col-span-1 md:col-span-2">
                         <label className="block text-sm font-semibold text-slate-800">Foto Barang / Asset (URL)</label>
                         <input 
@@ -881,6 +908,9 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
                                         setAuctionNotes(row.notes || "");
                                         setAuctionSellingPrice(row.sellingPrice ? String(row.sellingPrice) : "");
                                         setFormattedAuctionSellingPrice(row.sellingPrice ? new Intl.NumberFormat("id-ID").format(Number(row.sellingPrice)) : "");
+                                        const appraisalStr = row.appraisalValue ? String(row.appraisalValue) : "";
+                                        setAuctionHargaMasuk(appraisalStr);
+                                        setFormattedAuctionHargaMasuk(row.appraisalValue ? new Intl.NumberFormat("id-ID").format(Number(row.appraisalValue)) : "");
                                         setAuctionImages(row.physicalItem?.images?.[0] || "");
                                         setActiveTab("BARU");
                                       }} 

@@ -39,6 +39,7 @@ function AddItemForm() {
     branchName: "Cabang Pasuruan - Sangar",
     category: "Elektronik",
     price: "",
+    hargaMasuk: "",
     kondisi: "Baru",
     whatsappNumber: "6281213211413",
     description: "",
@@ -50,6 +51,7 @@ function AddItemForm() {
   type VariantInput = {
     title: string;
     hargaJual: string;
+    hargaMasuk: string;
     imageUrl: string;
     imageName: string;
   };
@@ -59,7 +61,7 @@ function AddItemForm() {
   const addVariantRow = () => {
     setVariants((prev) => [
       ...prev,
-      { title: "", hargaJual: "", imageUrl: "", imageName: "" },
+      { title: "", hargaJual: "", hargaMasuk: "", imageUrl: "", imageName: "" },
     ]);
   };
 
@@ -188,6 +190,12 @@ function AddItemForm() {
     setFormData({ ...formData, price: formatted });
   };
 
+  const handleHargaMasukChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const formatted = formatCurrency(rawValue);
+    setFormData({ ...formData, hargaMasuk: formatted });
+  };
+
   const getCleanPrice = (): number => {
     return Number(formData.price.replace(/\./g, ""));
   };
@@ -252,6 +260,7 @@ function AddItemForm() {
       const payload = {
         ...formData,
         price: getCleanPrice(),
+        hargaMasuk: formData.hargaMasuk ? Number(formData.hargaMasuk.replace(/\./g, "")) : null,
         images: compressedImages.length > 0
           ? compressedImages.map((img) => img.url)
           : ["https://placehold.co/800x600/f1f5f9/94a3b8?text=No+Image"],
@@ -261,6 +270,7 @@ function AddItemForm() {
         variants: variants.map((v) => ({
           title: v.title,
           price: cleanPrice(v.hargaJual),
+          hargaMasuk: v.hargaMasuk ? cleanPrice(v.hargaMasuk) : null,
           imageUrl: v.imageUrl || "https://placehold.co/800x600/f1f5f9/94a3b8?text=No+Image",
         })),
       };
@@ -355,7 +365,7 @@ function AddItemForm() {
                 <div className="mt-4 space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Daftar Sub-Barang (Varian)</h3>
                   {variants.map((v, index) => (
-                    <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end bg-white p-3 rounded-lg border border-slate-100 shadow-sm relative">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end bg-white p-3 rounded-lg border border-slate-100 shadow-sm relative">
                       <button
                         type="button"
                         onClick={() => removeVariantRow(index)}
@@ -385,6 +395,20 @@ function AddItemForm() {
                             value={v.hargaJual}
                             onChange={(e) => handleVariantChange(index, "hargaJual", formatCurrency(e.target.value))}
                             placeholder="500.000"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-brand-500 font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Harga Masuk</label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">Rp</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={v.hargaMasuk || ""}
+                            onChange={(e) => handleVariantChange(index, "hargaMasuk", formatCurrency(e.target.value))}
+                            placeholder="400.000"
                             className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-brand-500 font-mono"
                           />
                         </div>
@@ -497,6 +521,23 @@ function AddItemForm() {
                   onChange={handlePriceChange}
                   className={`${inputClassName} pl-10`}
                   placeholder="5.000.000"
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Ketik angka, titik pemisah ribuan otomatis muncul.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Harga Masuk / Modal (Rp)
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">Rp</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={formData.hargaMasuk}
+                  onChange={handleHargaMasukChange}
+                  className={`${inputClassName} pl-10`}
+                  placeholder="4.000.000"
                 />
               </div>
               <p className="text-xs text-slate-400 mt-1">Ketik angka, titik pemisah ribuan otomatis muncul.</p>

@@ -214,6 +214,7 @@ export default function ItemsTableClient({
   // Full form edit states
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [editPriceText, setEditPriceText] = useState("");
+  const [editHargaMasukText, setEditHargaMasukText] = useState("");
   const [compressedImages, setCompressedImages] = useState<any[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -365,6 +366,7 @@ export default function ItemsTableClient({
       if (resData.success && resData.data) {
         setEditingItem(resData.data);
         setEditPriceText(formatRupiahMask(String(resData.data.price)));
+        setEditHargaMasukText(resData.data.hargaMasuk ? formatRupiahMask(String(resData.data.hargaMasuk)) : "");
         setCompressedImages(resData.data.images.map((url: string) => ({ url })));
       } else {
         alert(resData.message || "Gagal memuat detail barang.");
@@ -382,12 +384,14 @@ export default function ItemsTableClient({
     setActionLoading(true);
     try {
       const rawPrice = parseRupiahMask(editPriceText);
+      const rawHargaMasuk = editHargaMasukText ? parseRupiahMask(editHargaMasukText) : null;
       const payload = {
         sku: editingItem.sku,
         title: editingItem.title,
         category: editingItem.category,
         kondisi: editingItem.kondisi,
         price: rawPrice,
+        hargaMasuk: rawHargaMasuk,
         whatsappNumber: editingItem.whatsappNumber,
         youtubeUrl: editingItem.youtubeUrl,
         hasWarranty: editingItem.hasWarranty,
@@ -715,6 +719,25 @@ export default function ItemsTableClient({
                     onChange={(e) => setEditPriceText(formatRupiahMask(e.target.value))}
                     className={`${inputClassName} pl-10`}
                     placeholder="5.000.000"
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">Ketik angka, titik pemisah ribuan otomatis muncul.</p>
+              </div>
+
+              {/* Harga Masuk / Modal */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Harga Masuk / Modal (Rp)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">Rp</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={editHargaMasukText}
+                    onChange={(e) => setEditHargaMasukText(formatRupiahMask(e.target.value))}
+                    className={`${inputClassName} pl-10`}
+                    placeholder="4.000.000"
                   />
                 </div>
                 <p className="text-xs text-slate-400 mt-1">Ketik angka, titik pemisah ribuan otomatis muncul.</p>

@@ -31,6 +31,7 @@ export async function POST(request: Request) {
           defects: body.defects || null,
           kondisi: body.kondisi,
           price: body.price,
+          hargaMasuk: body.hargaMasuk !== undefined && body.hargaMasuk !== null ? Number(body.hargaMasuk) : null,
           status: Status.Tersedia,
           images: body.images || [],
           whatsappNumber: body.whatsappNumber,
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
               kondisi: body.kondisi,
               price: v.price,
               hargaJual: v.price,
+              hargaMasuk: v.hargaMasuk !== undefined && v.hargaMasuk !== null ? Number(v.hargaMasuk) : (body.hargaMasuk !== undefined && body.hargaMasuk !== null ? Number(body.hargaMasuk) : null),
               status: Status.Tersedia,
               images: [v.imageUrl],
               variantImageUrl: v.imageUrl,
@@ -134,6 +136,7 @@ export async function GET(request: Request) {
       description: true,
       defects: true,
       hargaJual: true,
+      hargaMasuk: true,
     };
 
     if (nomorInduk) {

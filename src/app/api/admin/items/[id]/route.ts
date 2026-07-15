@@ -115,6 +115,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       category: body.category,
       kondisi: body.kondisi,
       price: Number(body.price),
+      hargaMasuk: body.hargaMasuk !== undefined && body.hargaMasuk !== null ? Number(body.hargaMasuk) : null,
       whatsappNumber: body.whatsappNumber?.trim(),
       youtubeUrl: body.youtubeUrl?.trim() || null,
       hasWarranty: !!body.hasWarranty,
@@ -285,6 +286,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     if ("hasWarranty" in body && typeof body.hasWarranty === "boolean") {
       updateData.hasWarranty = body.hasWarranty;
+    }
+    if ("hargaMasuk" in body) {
+      updateData.hargaMasuk = body.hargaMasuk !== null && body.hargaMasuk !== undefined ? Number(body.hargaMasuk) : null;
     }
 
     if (Object.keys(updateData).length === 0) {

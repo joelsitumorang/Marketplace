@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, PackageSearch, PlusCircle, LogOut, ScanLine, BarChart3, Users, History } from "lucide-react";
+import { LayoutDashboard, PackageSearch, PlusCircle, LogOut, ScanLine, BarChart3, Users, History, Warehouse } from "lucide-react";
 import { Role } from "@prisma/client";
 
 export default function AdminSidebar({ role, userBranch }: { role: Role, userBranch: string }) {
@@ -18,6 +18,7 @@ export default function AdminSidebar({ role, userBranch }: { role: Role, userBra
   const menuItems = [
     { name: "Dashboard", href: "/mbg-internal-portal", icon: LayoutDashboard },
     { name: "POS Kasir", href: "/mbg-internal-portal/kasir", icon: ScanLine },
+    { name: "Gudang", href: "/mbg-internal-portal/gudang", icon: Warehouse },
     { name: "Semua Barang", href: "/mbg-internal-portal/items", icon: PackageSearch },
     { name: "Tambah Barang", href: "/mbg-internal-portal/items/new", icon: PlusCircle },
     { name: "Laporan", href: "/mbg-internal-portal/reports", icon: BarChart3 },

@@ -167,7 +167,7 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
-    const { contractId, action, sellingPrice, notes, buyerName, paymentMethod, images } = body;
+    const { contractId, action, sellingPrice, hargaMasuk, notes, buyerName, paymentMethod, images } = body;
 
     if (action === "TEBUS") {
       const result = await prisma.pawnContract.update({
@@ -205,6 +205,7 @@ export async function PATCH(request: Request) {
           where: { sku: contract.uniqueCode },
           update: {
             price: contract.sellingPrice || 0,
+            hargaMasuk: hargaMasuk ? parseFloat(hargaMasuk) : null,
             defects: notes,
             status: "Tersedia",
             isMarketplaceVisible: true,
@@ -218,6 +219,7 @@ export async function PATCH(request: Request) {
             description: contract.physicalItem.description || "Barang gadai lelang",
             defects: notes,
             price: contract.sellingPrice || 0,
+            hargaMasuk: hargaMasuk ? parseFloat(hargaMasuk) : null,
             status: "Tersedia",
             images: finalImages && finalImages.length > 0 ? finalImages : ["https://images.unsplash.com/photo-1588508065123-287b28e013da?auto=format&fit=crop&w=800&q=80"],
             whatsappNumber: "081234567890",

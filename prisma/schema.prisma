@@ -47,6 +47,7 @@ model AuctionItem {
   children             AuctionItem[]      @relation("ItemVariants")
   variantImageUrl      String?            @map("variant_image_url")
   hargaJual            Decimal?           @map("harga_jual") @db.Decimal(12, 2)
+  hargaMasuk           Decimal?           @map("harga_masuk") @db.Decimal(12, 2)
   physicalItem         PhysicalItem?      @relation(fields: [physicalItemId], references: [id])
   transactions         SalesTransaction[]
   returnReason         String?            @map("return_reason")
