@@ -41,3 +41,4 @@ next-env.d.ts
 
 # backups
 backup_data.json
+backup_gudang_only.json

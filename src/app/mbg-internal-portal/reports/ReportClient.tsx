@@ -37,6 +37,7 @@ type Transaction = {
   item: {
     title: string;
     category: string;
+    hargaMasuk?: any;
   };
   isReturned: boolean;
   returnReason?: string;
@@ -143,7 +144,9 @@ export default function ReportClient({
   };
 
   // Exclude returned transaction prices from the total revenue
-  const totalRevenue = initialTransactions.reduce((acc, tx) => acc + (tx.isReturned ? 0 : Number(tx.soldPrice)), 0);
+  const totalOmset = initialTransactions.reduce((acc, tx) => acc + (tx.isReturned ? 0 : Number(tx.soldPrice)), 0);
+  const totalHargaMasuk = initialTransactions.reduce((acc, tx) => acc + (tx.isReturned ? 0 : (tx.item?.hargaMasuk ? Number(tx.item.hargaMasuk) : 0)), 0);
+  const totalRevenue = totalOmset - totalHargaMasuk; // Pendapatan Bersih
   const activeTxCount = initialTransactions.filter(tx => !tx.isReturned).length;
   const returnedTxCount = initialTransactions.filter(tx => tx.isReturned).length;
 
@@ -210,9 +213,9 @@ export default function ReportClient({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-        {/* PENDAPATAN BERSIH (Top Row on mobile, Full Width) */}
-        <div className="col-span-2 md:col-span-1 bg-white rounded-2xl p-3.5 md:p-6 border border-gray-150 shadow-sm flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+        {/* PENDAPATAN BERSIH */}
+        <div className="bg-white rounded-2xl p-3.5 md:p-6 border border-gray-150 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[10px] md:text-xs text-slate-400 font-bold tracking-wider uppercase mb-1">Pendapatan Bersih</p>
             <h3 className="text-xl md:text-2xl font-black text-slate-900">{formatIDR(totalRevenue)}</h3>
@@ -222,19 +225,30 @@ export default function ReportClient({
           </div>
         </div>
 
+        {/* TOTAL OMSET */}
+        <div className="bg-white rounded-2xl p-3.5 md:p-6 border border-gray-150 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-[10px] md:text-xs text-slate-400 font-bold tracking-wider uppercase mb-1">Total Omset</p>
+            <h3 className="text-xl md:text-2xl font-black text-slate-900">{formatIDR(totalOmset)}</h3>
+          </div>
+          <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 flex-shrink-0">
+            <span className="text-lg md:text-2xl">📈</span>
+          </div>
+        </div>
+
         {/* TOTAL TRANSAKSI */}
-        <div className="col-span-1 bg-white rounded-2xl p-3.5 md:p-6 border border-gray-150 shadow-sm flex items-center justify-between">
+        <div className="bg-white rounded-2xl p-3.5 md:p-6 border border-gray-150 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[10px] md:text-xs text-slate-400 font-bold tracking-wider uppercase mb-1">Total Transaksi</p>
             <h3 className="text-xl md:text-2xl font-black text-slate-900">{activeTxCount}</h3>
           </div>
-          <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 flex-shrink-0">
+          <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-purple-50 flex items-center justify-center border border-purple-100 flex-shrink-0">
             <span className="text-lg md:text-2xl">🛍️</span>
           </div>
         </div>
 
         {/* TRANSAKSI RETUR */}
-        <div className="col-span-1 bg-white rounded-2xl p-3.5 md:p-6 border border-gray-150 shadow-sm flex items-center justify-between">
+        <div className="bg-white rounded-2xl p-3.5 md:p-6 border border-gray-150 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[10px] md:text-xs text-slate-400 font-bold tracking-wider uppercase mb-1">Transaksi Retur</p>
             <h3 className="text-xl md:text-2xl font-black text-slate-900">{returnedTxCount}</h3>
@@ -254,57 +268,70 @@ export default function ReportClient({
                 <th className="px-6 py-4 font-semibold">Tgl Transaksi</th>
                 <th className="px-6 py-4 font-semibold">Barang</th>
                 <th className="px-6 py-4 font-semibold">Cabang & Kasir</th>
-                <th className="px-6 py-4 font-semibold text-right">Harga</th>
+                <th className="px-6 py-4 font-semibold text-right">Harga Masuk</th>
+                <th className="px-6 py-4 font-semibold text-right">Harga Jual</th>
+                <th className="px-6 py-4 font-semibold text-right">Pendapatan Bersih</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {initialTransactions.map((tx) => (
-                <tr key={tx.id} className={`hover:bg-slate-50 transition-colors bg-white ${tx.isReturned ? "opacity-75" : ""}`}>
-                  <td className="px-6 py-4">
-                    <div className="text-slate-900 font-medium">
-                      {new Date(tx.transactionDate).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {new Date(tx.transactionDate).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900">{tx.sku}</span>
-                      {tx.isReturned && (
-                        <span className="px-2 py-0.5 rounded text-[9px] uppercase tracking-wider font-black bg-rose-100 text-rose-600 border border-rose-200">
-                          RETUR
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-slate-600 text-xs truncate max-w-[200px]" title={tx.item?.title || "Item Terhapus"}>
-                      {tx.item?.title || "Item Terhapus"}
-                    </div>
-                    {tx.isReturned && tx.returnReason && (
-                      <div className="text-[10px] text-rose-600 bg-rose-50 border border-rose-100 rounded px-2 py-0.5 mt-1 inline-block max-w-xs truncate" title={tx.returnReason}>
-                        Alasan: {tx.returnReason}
+              {initialTransactions.map((tx) => {
+                const cost = tx.item?.hargaMasuk ? Number(tx.item.hargaMasuk) : 0;
+                const sold = Number(tx.soldPrice);
+                const profit = tx.isReturned ? 0 : (sold - cost);
+                return (
+                  <tr key={tx.id} className={`hover:bg-slate-50 transition-colors bg-white ${tx.isReturned ? "opacity-75" : ""}`}>
+                    <td className="px-6 py-4">
+                      <div className="text-slate-900 font-medium">
+                        {new Date(tx.transactionDate).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-slate-900 font-medium">{formatBranchName(tx.branchName)}</div>
-                    <div className="text-xs text-slate-500">Kasir: {tx.cashierName}</div>
-                  </td>
-                  <td className={`px-6 py-4 text-right font-bold ${tx.isReturned ? "line-through text-slate-400" : "text-slate-900"}`}>
-                    {formatIDR(tx.soldPrice)}
-                  </td>
-                </tr>
-              ))}
+                      <div className="text-xs text-slate-500">
+                        {new Date(tx.transactionDate).toLocaleTimeString("id-ID", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">{tx.sku}</span>
+                        {tx.isReturned && (
+                          <span className="px-2 py-0.5 rounded text-[9px] uppercase tracking-wider font-black bg-rose-100 text-rose-600 border border-rose-200">
+                            RETUR
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-slate-600 text-xs truncate max-w-[200px]" title={tx.item?.title || "Item Terhapus"}>
+                        {tx.item?.title || "Item Terhapus"}
+                      </div>
+                      {tx.isReturned && tx.returnReason && (
+                        <div className="text-[10px] text-rose-600 bg-rose-50 border border-rose-100 rounded px-2 py-0.5 mt-1 inline-block max-w-xs truncate" title={tx.returnReason}>
+                          Alasan: {tx.returnReason}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-slate-900 font-medium">{formatBranchName(tx.branchName)}</div>
+                      <div className="text-xs text-slate-500">Kasir: {tx.cashierName}</div>
+                    </td>
+                    <td className="px-6 py-4 text-right font-medium text-slate-600">
+                      {cost > 0 ? formatIDR(cost) : "-"}
+                    </td>
+                    <td className={`px-6 py-4 text-right font-bold ${tx.isReturned ? "line-through text-slate-400" : "text-slate-900"}`}>
+                      {formatIDR(sold)}
+                    </td>
+                    <td className={`px-6 py-4 text-right font-bold ${tx.isReturned ? "text-slate-400" : profit >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {tx.isReturned ? "-" : formatIDR(profit)}
+                    </td>
+                  </tr>
+                );
+              })}
               {initialTransactions.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-500 bg-white">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500 bg-white">
                     Tidak ada data transaksi pada rentang filter ini.
                   </td>
                 </tr>
@@ -340,8 +367,16 @@ export default function ReportClient({
                   </div>
                 )}
               </div>
-              <div className="text-right whitespace-nowrap">
+              <div className="text-right whitespace-nowrap flex flex-col items-end">
                 <div className={`font-bold text-sm ${tx.isReturned ? "line-through text-slate-400" : "text-slate-900"}`}>{formatIDR(tx.soldPrice)}</div>
+                {!tx.isReturned && (
+                  <>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Masuk: {tx.item?.hargaMasuk ? formatIDR(tx.item.hargaMasuk) : "-"}</div>
+                    <div className={`text-[10px] font-bold ${(Number(tx.soldPrice) - (tx.item?.hargaMasuk ? Number(tx.item.hargaMasuk) : 0)) >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      Bersih: {formatIDR(Number(tx.soldPrice) - (tx.item?.hargaMasuk ? Number(tx.item.hargaMasuk) : 0))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             <div className="pt-2 border-t border-slate-50 text-[11px] flex justify-between text-slate-600">

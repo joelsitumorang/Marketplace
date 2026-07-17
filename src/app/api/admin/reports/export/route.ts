@@ -90,7 +90,7 @@ export async function GET(request: Request) {
       where,
       orderBy: { transactionDate: "desc" },
       include: {
-        item: { select: { title: true, category: true } },
+        item: { select: { title: true, category: true, hargaMasuk: true } },
       },
     });
 
@@ -130,7 +130,9 @@ export async function GET(request: Request) {
         { key: "alasanRetur", width: 30 },
         { key: "cabang", width: 20 },
         { key: "kasir", width: 20 },
+        { key: "hargaMasuk", width: 20 },
         { key: "hargaTerjual", width: 20 },
+        { key: "pendapatanBersih", width: 20 },
         { key: "statusTransaksi", width: 18 },
       ];
       headerRowValues = [
@@ -142,7 +144,9 @@ export async function GET(request: Request) {
         "Alasan Retur",
         "Cabang",
         "Kasir",
+        "Harga Masuk",
         "Harga Terjual",
+        "Pendapatan Bersih",
         "Status Transaksi"
       ];
     } else {
@@ -154,7 +158,9 @@ export async function GET(request: Request) {
         { key: "kategori", width: 15 },
         { key: "cabang", width: 20 },
         { key: "kasir", width: 20 },
+        { key: "hargaMasuk", width: 20 },
         { key: "hargaTerjual", width: 20 },
+        { key: "pendapatanBersih", width: 20 },
         { key: "statusTransaksi", width: 18 },
         { key: "alasanRetur", width: 30 },
       ];
@@ -166,7 +172,9 @@ export async function GET(request: Request) {
         "Kategori",
         "Cabang",
         "Kasir",
+        "Harga Masuk",
         "Harga Terjual",
+        "Pendapatan Bersih",
         "Status Transaksi",
         "Alasan Retur"
       ];
@@ -198,6 +206,10 @@ export async function GET(request: Request) {
 
     // Populate data rows starting at Row 4
     transactions.forEach((tx) => {
+      const cost = tx.item?.hargaMasuk ? Number(tx.item.hargaMasuk) : 0;
+      const sold = Number(tx.soldPrice);
+      const profit = tx.isReturned ? 0 : (sold - cost);
+
       const newRow = worksheet.addRow({
         id: `TX-${String(tx.id).padStart(5, "0")}`,
         waktu: new Date(tx.transactionDate).toLocaleString("id-ID"),
@@ -206,7 +218,9 @@ export async function GET(request: Request) {
         kategori: tx.item?.category || "Lainnya",
         cabang: tx.branchName,
         kasir: tx.cashierName,
-        hargaTerjual: Number(tx.soldPrice),
+        hargaMasuk: cost,
+        hargaTerjual: sold,
+        pendapatanBersih: profit,
         statusTransaksi: tx.isReturned ? "RETUR" : "SUKSES",
         alasanRetur: tx.isReturned ? (tx.returnReason || "Tidak ada alasan") : "-",
       });
@@ -233,23 +247,33 @@ export async function GET(request: Request) {
     });
 
     // Format the number format dynamically using column key
+    worksheet.getColumn("hargaMasuk").numFmt = '#,##0';
     worksheet.getColumn("hargaTerjual").numFmt = '#,##0';
+    worksheet.getColumn("pendapatanBersih").numFmt = '#,##0';
 
-    // Calculate sum of Harga Terjual (excluding returned transactions)
-    const totalRevenue = transactions.reduce((sum, tx) => sum + (tx.isReturned ? 0 : Number(tx.soldPrice)), 0);
+    // Calculate sums
+    const totalOmset = transactions.reduce((sum, tx) => sum + (tx.isReturned ? 0 : Number(tx.soldPrice)), 0);
+    const totalHargaMasuk = transactions.reduce((sum, tx) => sum + (tx.isReturned ? 0 : (tx.item?.hargaMasuk ? Number(tx.item.hargaMasuk) : 0)), 0);
+    const totalRevenue = totalOmset - totalHargaMasuk; // Pendapatan Bersih
 
     // Append a dedicated Summary Row at the bottom
     const summaryRow = worksheet.addRow({
-      kasir: "Total Pendapatan Bersih",
-      hargaTerjual: totalRevenue,
+      kasir: "Total",
+      hargaMasuk: totalHargaMasuk,
+      hargaTerjual: totalOmset,
+      pendapatanBersih: totalRevenue,
     });
 
     summaryRow.height = 22;
 
     // Style summary row to be bold
     summaryRow.getCell("kasir").font = { bold: true };
+    summaryRow.getCell("hargaMasuk").font = { bold: true };
+    summaryRow.getCell("hargaMasuk").numFmt = '#,##0';
     summaryRow.getCell("hargaTerjual").font = { bold: true };
     summaryRow.getCell("hargaTerjual").numFmt = '#,##0';
+    summaryRow.getCell("pendapatanBersih").font = { bold: true };
+    summaryRow.getCell("pendapatanBersih").numFmt = '#,##0';
 
     summaryRow.eachCell((cell) => {
       cell.border = {
