@@ -37,6 +37,11 @@ export default function RootLayout({
   return (
     <html lang="id" className={inter.variable}>
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0284c7" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -50,6 +55,17 @@ export default function RootLayout({
                     return originalFetch(input, init);
                   };
                   window.fetch.__patched = true;
+                }
+
+                // Register Service Worker for PWA
+                if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                      console.log('SW registered successfully:', reg.scope);
+                    }).catch(function(err) {
+                      console.log('SW registration failed:', err);
+                    });
+                  });
                 }
               })();
             `

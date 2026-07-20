@@ -1,0 +1,22 @@
+{
+  "name": "PT MBG Marketplace Lelang",
+  "short_name": "MBG Portal",
+  "description": "Portal Internal dan Katalog Lelang PT MBG",
+  "start_url": "/mbg-internal-portal",
+  "display": "standalone",
+  "background_color": "#1e293b",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
