@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
         adminEmail: session.id,
         eventType: "Retur Otomatis Disetujui",
         productSku: transaction.sku,
-        productName: transaction.itemTitle || transaction.sku,
+        productName: transaction.item.title,
         description: `Retur SKU ${transaction.sku} disetujui otomatis (${daysSincePurchase} hari)`,
       });
 
@@ -248,7 +248,7 @@ export async function POST(req: NextRequest) {
         adminEmail: session.id,
         eventType: "Retur Diajukan",
         productSku: transaction.sku,
-        productName: transaction.itemTitle || transaction.sku,
+        productName: transaction.item.title,
         description: `Pengajuan retur SKU ${transaction.sku} (${daysSincePurchase} hari) menunggu persetujuan`,
       });
     }
