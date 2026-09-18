@@ -85,11 +85,13 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
         return retur;
       });
 
-      await logActivity(
-        session.id,
-        "Retur Disetujui SUPERADMIN",
-        `Retur SKU ${salesReturn.salesTransaction.sku} disetujui`
-      );
+      await logActivity({
+        adminEmail: session.id,
+        eventType: "Retur Disetujui SUPERADMIN",
+        productSku: salesReturn.salesTransaction.sku,
+        productName: salesReturn.auctionItem.title,
+        description: `Retur SKU ${salesReturn.salesTransaction.sku} disetujui`,
+      });
 
       revalidatePath("/");
       revalidatePath(`/katalog/${salesReturn.auctionItemId}`);
@@ -104,11 +106,13 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
         },
       });
 
-      await logActivity(
-        session.id,
-        "Retur Ditolak",
-        `Retur SKU ${salesReturn.salesTransaction.sku} ditolak oleh SUPERADMIN`
-      );
+      await logActivity({
+        adminEmail: session.id,
+        eventType: "Retur Ditolak",
+        productSku: salesReturn.salesTransaction.sku,
+        productName: salesReturn.auctionItem.title,
+        description: `Retur SKU ${salesReturn.salesTransaction.sku} ditolak oleh SUPERADMIN`,
+      });
     }
 
     return NextResponse.json({ success: true, data: updatedReturn });
