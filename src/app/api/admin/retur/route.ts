@@ -177,6 +177,9 @@ export async function POST(req: NextRequest) {
             condition,
             refundAmount,
             refundMethod,
+            daysSincePurchase,
+            requiresApproval,
+            asalCabang: session.asal_cabang,
             status,
             approvedById: session.id,
             approvedAt: new Date(),
@@ -213,11 +216,13 @@ export async function POST(req: NextRequest) {
         return retur;
       });
 
-      await logActivity(
-        session.id,
-        "Retur Otomatis Disetujui",
-        `Retur SKU ${transaction.sku} disetujui otomatis (${daysSincePurchase} hari)`
-      );
+      await logActivity({
+        adminEmail: session.id,
+        eventType: "Retur Otomatis Disetujui",
+        productSku: transaction.sku,
+        productName: transaction.itemTitle || transaction.sku,
+        description: `Retur SKU ${transaction.sku} disetujui otomatis (${daysSincePurchase} hari)`,
+      });
 
       revalidatePath("/");
       revalidatePath(`/katalog/${transaction.itemId}`);
@@ -232,15 +237,20 @@ export async function POST(req: NextRequest) {
           condition,
           refundAmount,
           refundMethod,
+          daysSincePurchase,
+          requiresApproval,
+          asalCabang: session.asal_cabang,
           status,
         },
       });
 
-      await logActivity(
-        session.id,
-        "Retur Diajukan",
-        `Pengajuan retur SKU ${transaction.sku} (${daysSincePurchase} hari) menunggu persetujuan`
-      );
+      await logActivity({
+        adminEmail: session.id,
+        eventType: "Retur Diajukan",
+        productSku: transaction.sku,
+        productName: transaction.itemTitle || transaction.sku,
+        description: `Pengajuan retur SKU ${transaction.sku} (${daysSincePurchase} hari) menunggu persetujuan`,
+      });
     }
 
     return NextResponse.json({
