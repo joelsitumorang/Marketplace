@@ -13,10 +13,6 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     }
 
     const { id } = await props.params;
-    const returnId = parseInt(id, 10);
-    if (isNaN(returnId)) {
-      return NextResponse.json({ success: false, message: "ID retur tidak valid" }, { status: 400 });
-    }
 
     const body = await req.json();
     const { action, approvalNote } = body;
@@ -30,7 +26,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     }
 
     const salesReturn = await prisma.salesReturn.findUnique({
-      where: { id: returnId },
+      where: { id },
       include: {
         salesTransaction: true,
         auctionItem: true,
@@ -50,7 +46,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     if (action === "DISETUJUI") {
       updatedReturn = await prisma.$transaction(async (tx) => {
         const retur = await tx.salesReturn.update({
-          where: { id: returnId },
+          where: { id },
           data: {
             status: "DISETUJUI",
             approvedById: session.id,
@@ -99,7 +95,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
       revalidatePath(`/katalog/${salesReturn.auctionItemId}`);
     } else {
       updatedReturn = await prisma.salesReturn.update({
-        where: { id: returnId },
+        where: { id },
         data: {
           status: "DITOLAK",
           approvedById: session.id,
