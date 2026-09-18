@@ -5,14 +5,15 @@ import { logActivity } from "@/lib/audit";
 import { Status } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   try {
     const session = await getSession();
     if (!session || session.role !== "SUPERADMIN") {
       return NextResponse.json({ success: false, message: "Unauthorized. Superadmin only." }, { status: 401 });
     }
 
-    const returnId = parseInt(params.id, 10);
+    const { id } = await props.params;
+    const returnId = parseInt(id, 10);
     if (isNaN(returnId)) {
       return NextResponse.json({ success: false, message: "ID retur tidak valid" }, { status: 400 });
     }
