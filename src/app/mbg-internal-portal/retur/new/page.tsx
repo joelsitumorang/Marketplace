@@ -6,10 +6,8 @@ export const metadata = {
   title: "Ajukan Retur Baru | MBG Internal Portal",
 };
 
-export default async function NewReturPage({
-  searchParams,
-}: {
-  searchParams: { sku?: string };
+export default async function NewReturPage(props: {
+  searchParams: Promise<{ sku?: string }>;
 }) {
   const session = await getSession();
   
@@ -17,6 +15,7 @@ export default async function NewReturPage({
     redirect("/mbg-internal-portal/login");
   }
 
+  const searchParams = await props.searchParams;
   // Pre-fill SKU if provided in query params (e.g., ?sku=123456)
   const initialSku = searchParams.sku || "";
 
