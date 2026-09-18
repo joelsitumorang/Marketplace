@@ -1501,6 +1501,7 @@ export default function ItemsTableClient({
           </div>
         </div>
       )}
+      </div>
 
       {/* ═══════════ E-INVOICE PRINTABLE DOCUMENT ═══════════ */}
       {printInvoiceData && (
