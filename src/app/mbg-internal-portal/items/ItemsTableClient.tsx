@@ -197,20 +197,6 @@ export default function ItemsTableClient({
     return overriddenStatuses[item.id]?.status || item.status;
   }, [overriddenStatuses]);
   
-  // Return reason states
-  const [returnConfirm, setReturnConfirm] = useState<{
-    isOpen: boolean;
-    itemId: number | null;
-    itemSku: string | null;
-    itemName: string | null;
-  }>({
-    isOpen: false,
-    itemId: null,
-    itemSku: null,
-    itemName: null,
-  });
-  const [returnReasonText, setReturnReasonText] = useState("");
-
   // Full form edit states
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [editPriceText, setEditPriceText] = useState("");
@@ -449,41 +435,6 @@ export default function ItemsTableClient({
     }
   };
 
-  const openReturnConfirm = (item: Item) => {
-    setReturnReasonText("");
-    setReturnConfirm({
-      isOpen: true,
-      itemId: item.id,
-      itemSku: item.sku,
-      itemName: item.title,
-    });
-  };
-
-  // Return Action Bridge
-  const handleReturnItem = async (itemId: number) => {
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/admin/items/${itemId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "RETUR",
-          returnReason: returnReasonText,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setShowSuccessModal(true);
-        router.refresh();
-      } else {
-        alert(data.message || "Gagal memproses retur.");
-      }
-    } catch (err) {
-      alert("Terjadi kesalahan jaringan.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const isSuperAdmin = userRole === "SUPERADMIN";
 
@@ -1129,17 +1080,17 @@ export default function ItemsTableClient({
                       >
                         <ExternalLink className="w-4 h-4" />
                       </Link>
-                      {/* Superadmin: Retur (only for Terjual) */}
+                      {/* Superadmin: Retur (redirect ke halaman retur baru) */}
                       {isSuperAdmin && item.status === "Terjual" && (
-                        <button
-                          onClick={() => openReturnConfirm(item)}
+                        <Link
+                          href={`/mbg-internal-portal/retur/new?sku=${item.sku}`}
                           className="p-1.5 rounded-lg text-orange-500 hover:text-orange-700 hover:bg-orange-50 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
                           title="Proses Retur Barang"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-6a4 4 0 00-4-4H4m0 0l3-3m-3 3l3 3m1-3h8a4 4 0 014 4v6m-9 5h.01M12 12h.01" />
                           </svg>
-                        </button>
+                        </Link>
                       )}
                       {/* Superadmin: Edit */}
                       {isSuperAdmin && (
@@ -1311,17 +1262,17 @@ export default function ItemsTableClient({
                 >
                   <ExternalLink className="w-4 h-4" />
                 </Link>
-                {/* Superadmin: Retur (only for Terjual) */}
+                {/* Superadmin: Retur (redirect ke halaman retur baru) */}
                 {isSuperAdmin && item.status === "Terjual" && (
-                  <button
-                    onClick={() => openReturnConfirm(item)}
+                  <Link
+                    href={`/mbg-internal-portal/retur/new?sku=${item.sku}`}
                     className="text-orange-500 hover:text-orange-700 p-1.5 bg-orange-50 rounded-md min-h-[44px] min-w-[44px] flex items-center justify-center"
                     title="Proses Retur Barang"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-6a4 4 0 00-4-4H4m0 0l3-3m-3 3l3 3m1-3h8a4 4 0 014 4v6m-9 5h.01M12 12h.01" />
                     </svg>
-                  </button>
+                  </Link>
                 )}
                 {isSuperAdmin && (
                   <button
@@ -1420,107 +1371,6 @@ export default function ItemsTableClient({
           </div>
         </div>
       )}
-
-      {/* ═══════════ RETURN CONFIRMATION MODAL ═══════════ */}
-      {returnConfirm.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="max-w-md w-full bg-white rounded-2xl p-6 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-150">
-            
-            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-4">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Konfirmasi Proses Retur</h3>
-            <p className="text-slate-600 text-sm mb-4 leading-relaxed">
-              Apakah Anda yakin ingin memproses retur untuk barang <span className="font-semibold text-slate-900">&quot;{returnConfirm.itemName}&quot;</span>? Aksi ini akan mengurangi total pendapatan berjalan.
-            </p>
-
-            {/* Mandated Return Reason Input */}
-            <div className="w-full text-left mb-5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                Alasan Barang Diretur <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                required
-                rows={3}
-                value={returnReasonText}
-                onChange={(e) => setReturnReasonText(e.target.value)}
-                placeholder="Contoh: Barang cacat tombol volume macet, customer meminta pembatalan transaksi."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all text-sm leading-relaxed"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">Alasan wajib diisi untuk mendokumentasikan retur.</p>
-            </div>
-
-            <div className="w-full grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setReturnConfirm({ isOpen: false, itemId: null, itemSku: null, itemName: null })}
-                className="w-full py-2.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all min-h-[44px] flex items-center justify-center"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={actionLoading || !returnReasonText.trim()}
-                onClick={async () => {
-                  if (returnConfirm.itemId !== null) {
-                    await handleReturnItem(returnConfirm.itemId);
-                  }
-                  setReturnConfirm({ isOpen: false, itemId: null, itemSku: null, itemName: null });
-                }}
-                className="w-full py-2.5 rounded-xl font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-100 transition-all min-h-[44px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {actionLoading && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
-                Oke, Proses
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════ RETURN SUCCESS MODAL ═══════════ */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="max-w-sm w-full bg-white rounded-2xl p-6 shadow-2xl border border-slate-50 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
-            
-            <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4 scale-0 animate-[scaleIn_0.3s_ease-out_forwards]">
-              <svg className="w-8 h-8 text-emerald-600 stroke-dasharray-[100] stroke-dashoffset-[100] animate-[drawCheck_0.4s_0.2s_ease-out_forwards]" 
-                   fill="none" 
-                   viewBox="0 0 24 24" 
-                   stroke="currentColor" 
-                   strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-
-            <h3 className="text-lg font-bold text-slate-900 mb-1">Retur Berhasil!</h3>
-            <p className="text-slate-500 text-sm mb-6 px-2 leading-relaxed">
-              Barang berhasil diretur dan kini otomatis tersedia kembali untuk dijual di katalog.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setShowSuccessModal(false)}
-              className="w-full py-2.5 rounded-xl font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-100 transition-all active:scale-[0.98] min-h-[44px] flex items-center justify-center"
-            >
-              Selesai
-            </button>
-          </div>
-          <style dangerouslySetInnerHTML={{
-            __html: `
-              @keyframes scaleIn {
-                to { transform: scale(1); }
-              }
-              @keyframes drawCheck {
-                to { stroke-dashoffset: 0; }
-              }
-            `
-          }} />
-        </div>
-      )}
-    </div>
 
       {/* ═══════════ E-INVOICE GENERATOR MODAL ═══════════ */}
       {invoiceModalData.isOpen && invoiceModalData.item && (

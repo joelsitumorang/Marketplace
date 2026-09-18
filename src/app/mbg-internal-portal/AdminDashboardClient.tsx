@@ -16,7 +16,7 @@ import {
   CartesianGrid,
   Legend
 } from "recharts";
-import { Package, TrendingUp, DollarSign, Loader2, Calendar } from "lucide-react";
+import { Package, TrendingUp, DollarSign, Loader2, Calendar, RotateCcw } from "lucide-react";
 import DateRangePicker, { DateRange } from "@/components/DateRangePicker";
 
 const toLocalIsoDateString = (date: Date | null): string => {
@@ -50,6 +50,9 @@ type AnalyticsData = {
     branchName: string;
     soldPrice: number;
   }[];
+  totalReturCount: number;
+  totalReturAmount: number;
+  pendingApprovalCount: number;
 };
 
 type Props = {
@@ -132,6 +135,7 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
     { title: "Item Aktif Tersedia", value: data.totalActive, icon: Package, color: "text-blue-600", bg: "bg-blue-50" },
     { title: "Item Terjual (Periode)", value: data.totalSold, icon: TrendingUp, color: "text-green-600", bg: "bg-green-50" },
     { title: "Total Pendapatan (Periode)", value: formatIDR(data.totalRevenue), icon: DollarSign, color: "text-amber-600", bg: "bg-amber-50" },
+    { title: "Retur Bulan Ini", value: `${data.totalReturCount} transaksi`, icon: RotateCcw, color: "text-rose-600", bg: "bg-rose-50", subtitle: formatIDR(data.totalReturAmount) },
   ];
 
   return (
@@ -156,15 +160,18 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
       )}
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {statCards.map((stat, i) => (
-          <div key={i} className={`bg-white rounded-2xl p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-5 border border-slate-200 shadow-sm ${i === 2 ? 'col-span-2 md:col-span-1' : ''}`}>
+          <div key={i} className="bg-white rounded-2xl p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-5 border border-slate-200 shadow-sm">
             <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center ${stat.bg} shrink-0`}>
               <stat.icon className={`w-5 h-5 md:w-7 md:h-7 ${stat.color}`} />
             </div>
             <div>
               <p className="text-[11px] md:text-sm font-medium text-slate-500 mb-0.5 md:mb-1 leading-tight">{stat.title}</p>
               <h3 className="text-lg md:text-2xl font-black text-slate-900 leading-none">{stat.value}</h3>
+              {stat.subtitle && (
+                <p className="text-[11px] md:text-sm font-semibold text-slate-600 mt-1">{stat.subtitle}</p>
+              )}
             </div>
           </div>
         ))}

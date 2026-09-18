@@ -18,6 +18,9 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  returnsProcessed SalesReturn[] @relation("ReturnProcessor")
+  returnsApproved  SalesReturn[] @relation("ReturnApprover")
+
   @@map("users")
 }
 
@@ -51,6 +54,7 @@ model AuctionItem {
   physicalItem         PhysicalItem?      @relation(fields: [physicalItemId], references: [id])
   transactions         SalesTransaction[]
   returnReason         String?            @map("return_reason")
+  returns              SalesReturn[]
 
   @@index([status])
   @@index([branchName])
@@ -72,6 +76,7 @@ model SalesTransaction {
   item            AuctionItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
   isReturned      Boolean     @default(false) @map("is_returned")
   returnReason    String?     @map("return_reason")
+  returns         SalesReturn[]
 
   @@index([transactionDate])
   @@index([branchName])
@@ -172,3 +177,66 @@ model AuditLog {
   @@index([eventType])
   @@map("audit_logs")
 }
+
+// ─── Return System ───────────────────────────────────────────────
+
+enum ReturnReason {
+  TIDAK_SESUAI_DESKRIPSI   // kondisi/spesifikasi beda dari katalog
+  RUSAK_SAAT_DITERIMA      // cacat yang tidak terdeteksi saat serah terima
+  KELENGKAPAN_KURANG       // charger, box, dus, kunci, dll tidak lengkap
+  SALAH_INPUT_KASIR        // kesalahan administratif, bukan keluhan pembeli
+  BERUBAH_PIKIRAN          // pembeli batal, barang tidak bermasalah
+  LAINNYA                  // wajib mengisi penjelasan tambahan
+}
+
+enum ReturnCondition {
+  LAYAK_JUAL_ULANG
+  PERLU_PERBAIKAN
+  RUSAK_TOTAL
+}
+
+enum ReturnStatus {
+  MENUNGGU_PERSETUJUAN
+  DISETUJUI
+  DITOLAK
+}
+
+/// Records structured return requests with time-based approval workflow.
+/// Returns within 3 calendar days are auto-approved; beyond that requires SUPERADMIN approval.
+/// Hard limit: returns beyond 30 calendar days are rejected outright.
+model SalesReturn {
+  id                 String          @id @default(cuid())
+  salesTransactionId Int             @map("sales_transaction_id")
+  salesTransaction   SalesTransaction @relation(fields: [salesTransactionId], references: [id])
+  auctionItemId      Int             @map("auction_item_id")
+  auctionItem        AuctionItem     @relation(fields: [auctionItemId], references: [id])
+
+  // --- Alasan ---
+  reason             ReturnReason
+  reasonNote         String?         @map("reason_note")
+  condition          ReturnCondition
+
+  // --- Uang ---
+  refundAmount       Decimal         @map("refund_amount") @db.Decimal(14, 2)
+  refundMethod       String          @map("refund_method")
+
+  // --- Waktu & persetujuan ---
+  daysSincePurchase  Int             @map("days_since_purchase")
+  requiresApproval   Boolean         @default(false) @map("requires_approval")
+  status             ReturnStatus    @default(DISETUJUI)
+  approvalNote       String?         @map("approval_note")
+  approvedById       String?         @map("approved_by_id")
+  approvedBy         User?           @relation("ReturnApprover", fields: [approvedById], references: [id])
+  approvedAt         DateTime?       @map("approved_at")
+
+  // --- Jejak ---
+  processedById      String          @map("processed_by_id")
+  processedBy        User            @relation("ReturnProcessor", fields: [processedById], references: [id])
+  asalCabang         String          @map("asal_cabang")
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  @@index([status, asalCabang])
+  @@index([salesTransactionId])
+  @@map("sales_returns")
+}
+

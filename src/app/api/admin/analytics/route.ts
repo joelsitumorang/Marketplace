@@ -64,17 +64,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // 1. Fetch current active stock items (Tersedia)
-    const totalActive = await prisma.auctionItem.count({
-      where: {
-        status: Status.Tersedia,
-        branchName: {
-          contains: "Pasuruan",
-          mode: "insensitive" as const
-        }
-      }
-    });
-
     const dateFilter = start && end ? {
       transactionDate: {
         gte: start,
@@ -82,31 +71,75 @@ export async function GET(request: Request) {
       }
     } : {};
 
-    // 2. Fetch sales transactions in date range (excluding returned transactions)
-    const sales = await prisma.salesTransaction.findMany({
-      where: {
-        branchName: {
-          contains: "Pasuruan",
-          mode: "insensitive" as const
-        },
-        isReturned: false,
-        ...dateFilter
-      },
-      include: {
-        item: {
-          select: {
-            id: true,
-            parentId: true,
-            title: true,
-            category: true,
-            nomorInduk: true,
+    const returDateFilter = start && end ? {
+      createdAt: {
+        gte: start,
+        lte: end
+      }
+    } : {};
+
+    // Fetch data in parallel
+    const [
+      totalActive,
+      sales,
+      totalReturCount,
+      returAmountAgg,
+      pendingApprovalCount
+    ] = await Promise.all([
+      prisma.auctionItem.count({
+        where: {
+          status: Status.Tersedia,
+          branchName: {
+            contains: "Pasuruan",
+            mode: "insensitive" as const
           }
         }
-      },
-      orderBy: {
-        transactionDate: "desc"
-      }
-    });
+      }),
+      prisma.salesTransaction.findMany({
+        where: {
+          branchName: {
+            contains: "Pasuruan",
+            mode: "insensitive" as const
+          },
+          isReturned: false,
+          ...dateFilter
+        },
+        include: {
+          item: {
+            select: {
+              id: true,
+              parentId: true,
+              title: true,
+              category: true,
+              nomorInduk: true,
+            }
+          }
+        },
+        orderBy: {
+          transactionDate: "desc"
+        }
+      }),
+      prisma.salesReturn.count({
+        where: {
+          status: "DISETUJUI",
+          ...returDateFilter
+        }
+      }),
+      prisma.salesReturn.aggregate({
+        _sum: { refundAmount: true },
+        where: {
+          status: "DISETUJUI",
+          ...returDateFilter
+        }
+      }),
+      prisma.salesReturn.count({
+        where: {
+          status: "MENUNGGU_PERSETUJUAN",
+        }
+      })
+    ]);
+
+    const totalReturAmount = returAmountAgg._sum.refundAmount || 0;
 
     // 3. Summarize metrics
     const totalSold = sales.length;
@@ -235,7 +268,10 @@ export async function GET(request: Request) {
         dailySalesData,
         categoryData,
         cashierData,
-        recentTransactions
+        recentTransactions,
+        totalReturCount,
+        totalReturAmount,
+        pendingApprovalCount
       }
     });
 

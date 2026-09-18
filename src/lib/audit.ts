@@ -4,7 +4,11 @@ export type AuditLogEventType =
   | "Barang Masuk"
   | "Barang Terjual"
   | "Barang Dipersiapkan / Dipesan"
-  | "Barang Retur";
+  | "Barang Retur"
+  | "Retur Diajukan"
+  | "Retur Otomatis Disetujui"
+  | "Retur Disetujui SUPERADMIN"
+  | "Retur Ditolak";
 
 export async function logActivity({
   adminEmail,

@@ -47,8 +47,17 @@ function AdminDashboardSkeleton() {
 }
 
 async function DashboardData() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
   // Parallelize queries to eliminate sequential blocking and reduce TTFB latency
-  const [totalActive, sales] = await Promise.all([
+  const [
+    totalActive, 
+    sales,
+    totalReturCount,
+    returAmountAgg,
+    pendingApprovalCount
+  ] = await Promise.all([
     prisma.auctionItem.count({
       where: {
         status: Status.Tersedia,
@@ -77,8 +86,32 @@ async function DashboardData() {
       orderBy: {
         transactionDate: "desc"
       }
+    }),
+    prisma.salesReturn.count({
+      where: {
+        status: "DISETUJUI",
+        createdAt: {
+          gte: startOfMonth
+        }
+      }
+    }),
+    prisma.salesReturn.aggregate({
+      _sum: { refundAmount: true },
+      where: {
+        status: "DISETUJUI",
+        createdAt: {
+          gte: startOfMonth
+        }
+      }
+    }),
+    prisma.salesReturn.count({
+      where: {
+        status: "MENUNGGU_PERSETUJUAN"
+      }
     })
   ]);
+
+  const totalReturAmount = returAmountAgg._sum.refundAmount || 0;
 
   const totalSold = sales.length;
   const totalRevenue = sales.reduce((sum, tx) => sum + Number(tx.soldPrice), 0);
@@ -160,7 +193,10 @@ async function DashboardData() {
     dailySalesData,
     categoryData,
     cashierData,
-    recentTransactions
+    recentTransactions,
+    totalReturCount,
+    totalReturAmount,
+    pendingApprovalCount
   };
 
   return (
