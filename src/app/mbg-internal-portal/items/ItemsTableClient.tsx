@@ -385,6 +385,7 @@ export default function ItemsTableClient({
         description: editingItem.description,
         defects: editingItem.defects,
         images: compressedImages.map((img: any) => img.url),
+        thumbnailIndex: editingItem.thumbnailIndex !== undefined ? editingItem.thumbnailIndex : 0,
         nomorInduk: editingItem.nomorInduk || "",
       };
 
@@ -814,16 +815,25 @@ export default function ItemsTableClient({
                       {compressedImages.map((img, idx) => (
                         <div
                           key={idx}
-                          className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 aspect-square"
+                          className={`relative group rounded-xl overflow-hidden shadow-sm bg-slate-100 aspect-square ${editingItem.thumbnailIndex === idx ? 'border-2 border-brand-500 ring-2 ring-brand-200' : 'border border-slate-200'}`}
+                          onClick={() => setEditingItem({ ...editingItem, thumbnailIndex: idx })}
                         >
                           <img
                             src={img.url}
                             alt={`Preview ${idx + 1}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover cursor-pointer"
                           />
+                          {editingItem.thumbnailIndex === idx && (
+                            <div className="absolute top-2 left-2 bg-brand-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                              THUMBNAIL
+                            </div>
+                          )}
                           <button
                             type="button"
-                            onClick={() => removeImage(idx)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeImage(idx);
+                            }}
                             className="absolute top-2 right-2 w-8 h-8 md:w-6 md:h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md transition-opacity"
                           >
                             <X className="w-4 h-4 md:w-3.5 md:h-3.5" />

@@ -29,6 +29,7 @@ function AddItemForm() {
     message: "",
   });
   const [compressedImages, setCompressedImages] = useState<CompressedImage[]>([]);
+  const [thumbnailIndex, setThumbnailIndex] = useState<number>(0);
 
   const [physicalItemId, setPhysicalItemId] = useState<string | null>(null);
   const [serialNumber, setSerialNumber] = useState<string | null>(null);
@@ -265,6 +266,7 @@ function AddItemForm() {
         images: compressedImages.length > 0
           ? compressedImages.map((img) => img.url)
           : ["https://placehold.co/800x600/f1f5f9/94a3b8?text=No+Image"],
+        thumbnailIndex,
         youtubeUrl: formData.youtubeUrl.trim() || null,
         physicalItemId,
         isMarketplaceVisible: false,
@@ -686,16 +688,22 @@ function AddItemForm() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                    {compressedImages.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 aspect-square"
-                      >
-                        <img
-                          src={img.url}
-                          alt={`Preview ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                      {compressedImages.map((img, idx) => (
+                        <div
+                          key={idx}
+                          className={`relative group rounded-xl overflow-hidden shadow-sm bg-slate-100 aspect-square ${thumbnailIndex === idx ? 'border-2 border-brand-500 ring-2 ring-brand-200' : 'border border-slate-200'}`}
+                          onClick={() => setThumbnailIndex(idx)}
+                        >
+                          <img
+                            src={img.url}
+                            alt={`Preview ${idx + 1}`}
+                            className="w-full h-full object-cover cursor-pointer"
+                          />
+                          {thumbnailIndex === idx && (
+                            <div className="absolute top-2 left-2 bg-brand-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                              THUMBNAIL
+                            </div>
+                          )}
                         <button
                           type="button"
                           onClick={() => removeImage(idx)}

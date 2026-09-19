@@ -55,6 +55,10 @@ model AuctionItem {
   transactions         SalesTransaction[]
   returnReason         String?            @map("return_reason")
   returns              SalesReturn[]
+  
+  // --- Lelang Customer & Publik ---
+  viewCount            Int       @default(0) @map("view_count")
+  thumbnailIndex       Int?      @map("thumbnail_index")
 
   @@index([status])
   @@index([branchName])

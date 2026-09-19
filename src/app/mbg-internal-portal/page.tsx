@@ -56,7 +56,8 @@ async function DashboardData() {
     sales,
     totalReturCount,
     returAmountAgg,
-    pendingApprovalCount
+    pendingApprovalCount,
+    topViewedItems
   ] = await Promise.all([
     prisma.auctionItem.count({
       where: {
@@ -107,6 +108,25 @@ async function DashboardData() {
     prisma.salesReturn.count({
       where: {
         status: "MENUNGGU_PERSETUJUAN"
+      }
+    }),
+    prisma.auctionItem.findMany({
+      where: {
+        viewCount: {
+          gt: 0
+        },
+        isMarketplaceVisible: true
+      },
+      orderBy: {
+        viewCount: 'desc'
+      },
+      take: 5,
+      select: {
+        id: true,
+        sku: true,
+        title: true,
+        viewCount: true,
+        branchName: true
       }
     })
   ]);
@@ -196,7 +216,8 @@ async function DashboardData() {
     recentTransactions,
     totalReturCount,
     totalReturAmount,
-    pendingApprovalCount
+    pendingApprovalCount,
+    topViewedItems
   };
 
   return (

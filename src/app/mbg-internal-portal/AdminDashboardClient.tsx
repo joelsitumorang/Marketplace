@@ -53,6 +53,13 @@ type AnalyticsData = {
   totalReturCount: number;
   totalReturAmount: number;
   pendingApprovalCount: number;
+  topViewedItems?: {
+    id: number;
+    sku: string;
+    title: string;
+    viewCount: number;
+    branchName: string;
+  }[];
 };
 
 type Props = {
@@ -387,6 +394,51 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
           </div>
         </div>
 
+      </div>
+
+      {/* Top Viewed Items Table */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mt-8">
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Barang Paling Banyak Dilihat</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Top 5 barang yang paling sering dibuka di katalog publik (all time).</p>
+        </div>
+        <div className="w-full mt-4 overflow-x-auto">
+          {data.topViewedItems && data.topViewedItems.length > 0 ? (
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="text-xs font-semibold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3">Barang & SKU</th>
+                  <th className="px-4 py-3">Cabang</th>
+                  <th className="px-4 py-3 text-right">View Count</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {data.topViewedItems.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-slate-900">{item.title}</div>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs">{item.branchName}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        {item.viewCount} views
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="text-slate-400 text-sm h-32 flex items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              Belum ada data tampilan barang.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

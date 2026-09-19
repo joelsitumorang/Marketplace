@@ -30,6 +30,8 @@ export default async function DetailPage({ params }: Props) {
     isMarketplaceVisible: true,
     nomorInduk: true,
     variantImageUrl: true,
+    viewCount: true,
+    thumbnailIndex: true,
   };
 
   const item = await prisma.auctionItem.findUnique({
@@ -40,6 +42,12 @@ export default async function DetailPage({ params }: Props) {
   if (!item || !item.isMarketplaceVisible) {
     notFound();
   }
+
+  // Increment view_count (fire & forget, catch errors to not crash render)
+  prisma.auctionItem.update({
+    where: { id: item.id },
+    data: { viewCount: { increment: 1 } },
+  }).catch((e) => console.error("Failed to update view count", e));
 
   // Fetch all active variants sharing the same nomorInduk
   const variants = item.nomorInduk ? await prisma.auctionItem.findMany({

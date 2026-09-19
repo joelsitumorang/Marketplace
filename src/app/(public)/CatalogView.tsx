@@ -360,17 +360,18 @@ export default function CatalogView({
             const isRecommended = item.kondisi === "Baru" || Number(item.price) > 5000000;
 
             return (
-              <button
+              <Link
                 key={item.id}
-                onClick={() => { if(!isUnavailable) openModal(item) }}
-                className={`bg-white rounded-xl sm:rounded-2xl overflow-hidden flex flex-col group border relative text-left w-full focus:outline-none content-visibility-card transition-all duration-400 ${
+                href={isUnavailable ? "#" : `/katalog/${item.id}`}
+                onClick={(e) => { if (isUnavailable) e.preventDefault(); }}
+                className={`bg-white rounded-xl sm:rounded-2xl overflow-hidden flex flex-col group border relative text-left w-full focus:outline-none content-visibility-card transition-all duration-400 block ${
                   isUnavailable ? "grayscale opacity-50 border-gray-150 shadow-none cursor-not-allowed" : "border-gray-150 shadow-none md:shadow-md md:hover:-translate-y-1 md:hover:shadow-lg transition-all duration-300"
                 }`}
               >
                 <div className="relative aspect-[4/3] w-full bg-slate-100 overflow-hidden">
-                  {item.images && item.images[0] ? (
+                  {item.images && item.images.length > 0 ? (
                     <Image
-                      src={item.images[0]}
+                      src={item.thumbnailIndex !== null && item.thumbnailIndex !== undefined && item.images[item.thumbnailIndex] ? item.images[item.thumbnailIndex] : item.images[0]}
                       alt={item.title}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -433,7 +434,7 @@ export default function CatalogView({
                     </div>
                   </div>
                 </div>
-              </button>
+              </Link>
             );
           })
         ) : (

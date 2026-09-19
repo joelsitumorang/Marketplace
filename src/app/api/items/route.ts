@@ -41,6 +41,7 @@ export async function POST(request: Request) {
           hasWarranty: body.hasWarranty !== undefined ? body.hasWarranty : false,
           nomorInduk: trimmedSku,
           parentId: null,
+          thumbnailIndex: body.thumbnailIndex !== undefined ? body.thumbnailIndex : 0,
         }
       });
 
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
               hasWarranty: body.hasWarranty !== undefined ? body.hasWarranty : false,
               nomorInduk: trimmedSku,
               parentId: parentItem.id,
+              thumbnailIndex: 0,
             }
           });
           createdVariants.push(childItem);

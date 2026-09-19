@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, FileSpreadsheet } from "lucide-react";
 import ItemsTableClient from "./ItemsTableClient";
 
 type Props = {
@@ -61,13 +61,23 @@ export default async function AdminItemsPage({ searchParams }: Props) {
     <div className="space-y-4">
       <div className="flex justify-between items-center gap-3 w-full mb-4">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Manajemen Barang</h1>
-        <Link 
-          href="/mbg-internal-portal/items/new" 
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors text-sm font-semibold shadow-sm whitespace-nowrap active:scale-95 flex-shrink-0"
-        >
-          <PlusCircle className="w-4 h-4" />
-          Tambah Barang
-        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/admin/items/export"
+            download
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors text-sm font-semibold shadow-sm whitespace-nowrap active:scale-95 flex-shrink-0"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Export Excel
+          </a>
+          <Link 
+            href="/mbg-internal-portal/items/new" 
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors text-sm font-semibold shadow-sm whitespace-nowrap active:scale-95 flex-shrink-0"
+          >
+            <PlusCircle className="w-4 h-4" />
+            Tambah Barang
+          </Link>
+        </div>
       </div>
 
       <ItemsTableClient 

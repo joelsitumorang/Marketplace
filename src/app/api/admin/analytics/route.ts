@@ -84,7 +84,8 @@ export async function GET(request: Request) {
       sales,
       totalReturCount,
       returAmountAgg,
-      pendingApprovalCount
+      pendingApprovalCount,
+      topViewedItems
     ] = await Promise.all([
       prisma.auctionItem.count({
         where: {
@@ -271,7 +272,8 @@ export async function GET(request: Request) {
         recentTransactions,
         totalReturCount,
         totalReturAmount,
-        pendingApprovalCount
+        pendingApprovalCount,
+        topViewedItems
       }
     });
 

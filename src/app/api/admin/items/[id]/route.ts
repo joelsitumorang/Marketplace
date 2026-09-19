@@ -122,6 +122,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       description: body.description?.trim(),
       defects: body.defects?.trim() || null,
       images: body.images || [],
+      thumbnailIndex: body.thumbnailIndex !== undefined ? body.thumbnailIndex : 0,
       nomorInduk: body.nomorInduk?.trim() || null,
     };
 
