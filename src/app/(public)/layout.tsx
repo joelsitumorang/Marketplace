@@ -1,5 +1,21 @@
 import Footer from "@/components/Footer";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "MBG Katalog Lelang",
+  manifest: "/manifest-lelang.webmanifest",
+  themeColor: "#ea580c",
+  appleWebApp: {
+    capable: true,
+    title: "MBG Lelang",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/logo.png",
+  },
+};
+
 export default function PublicLayout({
   children,
 }: {

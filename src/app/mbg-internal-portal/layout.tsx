@@ -3,6 +3,22 @@ import AdminSidebar from "@/components/AdminSidebar";
 import AdminBottomNav from "@/components/AdminBottomNav";
 import { Toaster } from "sonner";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "MBG Admin",
+  manifest: "/manifest-admin.webmanifest",
+  themeColor: "#0284c7",
+  appleWebApp: {
+    capable: true,
+    title: "MBG Admin",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/logo.png",
+  },
+};
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
 
