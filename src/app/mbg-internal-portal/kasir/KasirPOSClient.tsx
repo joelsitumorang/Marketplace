@@ -41,6 +41,11 @@ type LastTx = {
   txDate: string;
   grandTotal: number;
   totalDiscount: number;
+  paymentMethod: string;
+  amountCash: number;
+  amountTransfer: number;
+  isDP: boolean;
+  dpAmount: number;
 };
 
 type Props = {
@@ -323,16 +328,52 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
 
   const handleCheckout = () => {
     if (cartItems.length === 0) return;
+
+    // --- Validasi ---
+    const targetAmount = isDP ? (Number(dpAmount) || 0) : grandTotal;
+
+    if (paymentMethod === "SPLIT") {
+      const splitTotal = (Number(splitCash) || 0) + (Number(splitTransfer) || 0);
+      if (splitTotal !== targetAmount) {
+        toast.error(`Total Split (Rp ${splitTotal.toLocaleString('id-ID')}) tidak sama dengan yang harus dibayar (Rp ${targetAmount.toLocaleString('id-ID')}).`);
+        return;
+      }
+    }
+
+    if (isDP) {
+      if (targetAmount <= 0 || targetAmount >= grandTotal) {
+        toast.error("Nominal DP harus lebih dari 0 dan kurang dari total tagihan.");
+        return;
+      }
+    }
+
     setShowConfirmCheckout(true);
   };
 
   const submitCheckout = async () => {
     setShowConfirmCheckout(false);
     setLoading(true);
-    toast.error("");
 
     try {
+      let finalCash = 0;
+      let finalTransfer = 0;
+      const targetAmount = isDP ? (Number(dpAmount) || 0) : grandTotal;
+
+      if (paymentMethod === "SPLIT") {
+        finalCash = Number(splitCash) || 0;
+        finalTransfer = Number(splitTransfer) || 0;
+      } else if (paymentMethod === "TUNAI") {
+        finalCash = targetAmount;
+      } else if (paymentMethod === "TRANSFER") {
+        finalTransfer = targetAmount;
+      }
+
       const payload = {
+        paymentMethod,
+        amountCash: finalCash,
+        amountTransfer: finalTransfer,
+        isDP,
+        dpAmount: targetAmount,
         items: cartItems.map((item) => ({
           itemId: item.id,
           sku: item.sku,
@@ -366,10 +407,19 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
           txDate,
           grandTotal,
           totalDiscount,
+          paymentMethod,
+          amountCash: finalCash,
+          amountTransfer: finalTransfer,
+          isDP,
+          dpAmount: targetAmount,
         });
 
         toast.success(`Transaksi Berhasil! ${cartItems.length} barang telah terjual.`);
         setCartItems([]);
+        setIsDP(false);
+        setDpAmount("");
+        setSplitCash("");
+        setSplitTransfer("");
         clearCartStorage();
 
         setTimeout(() => {
@@ -608,6 +658,81 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                     </span>
                   </div>
 
+                  {/* Payment Method Selection */}
+                  <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm mt-3">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metode Pembayaran</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["TUNAI", "TRANSFER", "SPLIT"] as const).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => setPaymentMethod(m)}
+                          className={`py-2 px-1 text-xs font-bold rounded-lg border transition-colors ${
+                            paymentMethod === m
+                              ? "bg-brand-50 border-brand-500 text-brand-700"
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+
+                    {paymentMethod === "SPLIT" && (
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500">Tunai (Rp)</label>
+                          <input
+                            type="text"
+                            placeholder="0"
+                            value={splitCash}
+                            onChange={(e) => setSplitCash(e.target.value.replace(/\D/g, ""))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-brand-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500">Transfer (Rp)</label>
+                          <input
+                            type="text"
+                            placeholder="0"
+                            value={splitTransfer}
+                            onChange={(e) => setSplitTransfer(e.target.value.replace(/\D/g, ""))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-brand-500"
+                          />
+                        </div>
+                        <div className="col-span-2 text-[10px] font-bold text-slate-500 text-right">
+                          Total Split: <span className="text-slate-800">{formatIDR((Number(splitCash) || 0) + (Number(splitTransfer) || 0))}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* DP Toggle */}
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 mt-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-slate-700">Bayar Sebagian (DP)</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Tempo maks 3 Hari</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={isDP} onChange={() => setIsDP(!isDP)} />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                      </label>
+                    </div>
+                    {isDP && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <label className="text-[10px] font-bold text-slate-500">Nominal Dibayarkan (Rp)</label>
+                        <input
+                          type="text"
+                          placeholder="0"
+                          value={dpAmount}
+                          onChange={(e) => setDpAmount(e.target.value.replace(/\D/g, ""))}
+                          className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:border-brand-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+
                   <button
                     onClick={handleCheckout}
                     disabled={loading || cartItems.length === 0}
@@ -663,7 +788,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
             </div>
             <div className="flex justify-between">
               <span>Metode:</span>
-              <span>CASH / OFFLINE</span>
+              <span className="font-bold">{lastTx.paymentMethod} {lastTx.isDP ? "(DP)" : ""}</span>
             </div>
           </div>
 
@@ -703,6 +828,35 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
             <span>TOTAL</span>
             <span>{formatIDR(lastTx.grandTotal)}</span>
           </div>
+
+          {lastTx.isDP && (
+            <div className="pt-2 mt-2 border-t border-black/20 text-[10px] space-y-1">
+              <div className="flex justify-between font-bold">
+                <span>DIBAYAR (DP):</span>
+                <span>{formatIDR(lastTx.dpAmount)}</span>
+              </div>
+              <div className="flex justify-between font-bold">
+                <span>KEKURANGAN:</span>
+                <span>{formatIDR(lastTx.grandTotal - lastTx.dpAmount)}</span>
+              </div>
+              <div className="text-center mt-2 font-bold italic">
+                *Jatuh tempo pelunasan maksimal 3 Hari
+              </div>
+            </div>
+          )}
+
+          {!lastTx.isDP && lastTx.paymentMethod === "SPLIT" && (
+            <div className="pt-2 mt-2 border-t border-black/20 text-[10px] space-y-1">
+              <div className="flex justify-between">
+                <span>Tunai:</span>
+                <span>{formatIDR(lastTx.amountCash)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Transfer:</span>
+                <span>{formatIDR(lastTx.amountTransfer)}</span>
+              </div>
+            </div>
+          )}
 
           <div className="border-t-2 border-black border-dashed pt-4 mt-3 text-center text-[10px]">
             <p className="font-bold mb-1">TERIMA KASIH</p>

@@ -41,6 +41,8 @@ type Transaction = {
   };
   isReturned: boolean;
   returnReason?: string;
+  status: string;
+  dpDeadline?: string;
 };
 
 type Props = {
@@ -303,6 +305,16 @@ export default function ReportClient({
                             RETUR
                           </span>
                         )}
+                        {!tx.isReturned && tx.status === "DP" && (
+                          <span className="px-2 py-0.5 rounded text-[9px] uppercase tracking-wider font-black bg-orange-100 text-orange-600 border border-orange-200">
+                            DP
+                          </span>
+                        )}
+                        {!tx.isReturned && tx.status === "DP" && tx.dpDeadline && new Date(tx.dpDeadline) < new Date() && (
+                          <span className="px-2 py-0.5 rounded text-[9px] uppercase tracking-wider font-black bg-red-100 text-red-600 border border-red-200 animate-pulse">
+                            JATUH TEMPO
+                          </span>
+                        )}
                       </div>
                       <div className="text-slate-600 text-xs truncate max-w-[200px]" title={tx.item?.title || "Item Terhapus"}>
                         {tx.item?.title || "Item Terhapus"}
@@ -310,6 +322,11 @@ export default function ReportClient({
                       {tx.isReturned && tx.returnReason && (
                         <div className="text-[10px] text-rose-600 bg-rose-50 border border-rose-100 rounded px-2 py-0.5 mt-1 inline-block max-w-xs truncate" title={tx.returnReason}>
                           Alasan: {tx.returnReason}
+                        </div>
+                      )}
+                      {!tx.isReturned && tx.status === "DP" && tx.dpDeadline && (
+                        <div className="text-[10px] text-orange-600 mt-1">
+                          Tempo: {new Date(tx.dpDeadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                         </div>
                       )}
                     </td>
@@ -354,6 +371,16 @@ export default function ReportClient({
                   {tx.isReturned && (
                     <span className="px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider font-black bg-rose-100 text-rose-600 border border-rose-200">
                       RETUR
+                    </span>
+                  )}
+                  {!tx.isReturned && tx.status === "DP" && (
+                    <span className="px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider font-black bg-orange-100 text-orange-600 border border-orange-200">
+                      DP
+                    </span>
+                  )}
+                  {!tx.isReturned && tx.status === "DP" && tx.dpDeadline && new Date(tx.dpDeadline) < new Date() && (
+                    <span className="px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider font-black bg-red-100 text-red-600 border border-red-200 animate-pulse">
+                      JATUH TEMPO
                     </span>
                   )}
                 </div>

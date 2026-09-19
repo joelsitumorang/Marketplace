@@ -7,7 +7,7 @@ import { logActivity } from "@/lib/audit";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items } = body;
+    const { items, paymentMethod, amountCash, amountTransfer, isDP, dpAmount } = body;
 
     // Validate: must have items array
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -48,6 +48,9 @@ export async function POST(request: Request) {
         });
 
         // 3. Create sales transaction record
+        const txStatus = isDP ? "DP" : "LUNAS";
+        const dpDeadline = isDP ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null;
+
         const salesTx = await tx.salesTransaction.create({
           data: {
             itemId: item.itemId,
@@ -55,8 +58,33 @@ export async function POST(request: Request) {
             soldPrice: item.soldPrice,
             branchName: item.branchName,
             cashierName: item.cashierName,
+            paymentMethod: paymentMethod || "TUNAI",
+            amountCash: amountCash || null,
+            amountTransfer: amountTransfer || null,
+            status: txStatus,
+            dpDeadline,
           },
         });
+
+        // 4. Jika DP, catat pembayaran awal sebagai cicilan pertama
+        if (isDP && dpAmount > 0) {
+          // Asumsikan dpAmount dari 1 barang? Tunggu, checkout kasir biasanya memproses banyak barang sekaligus!
+          // Tapi dpAmount di frontend adalah DP TOTAL untuk seluruh keranjang.
+          // Wah, kita memecah DP per barang secara proporsional.
+          
+          const totalHargaKeranjang = items.reduce((sum: number, it: any) => sum + Number(it.soldPrice), 0);
+          const proporsiDP = Number(item.soldPrice) / totalHargaKeranjang;
+          const itemDPAmount = dpAmount * proporsiDP;
+
+          await tx.paymentInstallment.create({
+            data: {
+              salesTransactionId: salesTx.id,
+              amount: itemDPAmount,
+              paymentMethod: paymentMethod || "TUNAI",
+              processedBy: item.cashierName
+            }
+          });
+        }
 
         results.push({ updatedItem, salesTx });
       }
