@@ -137,6 +137,15 @@ export async function GET(request: Request) {
         where: {
           status: "MENUNGGU_PERSETUJUAN",
         }
+      }),
+      prisma.auctionItem.findMany({
+        where: {
+          viewCount: { gt: 0 },
+          isMarketplaceVisible: true
+        },
+        orderBy: { viewCount: 'desc' },
+        take: 5,
+        select: { id: true, sku: true, title: true, viewCount: true, branchName: true }
       })
     ]);
 
