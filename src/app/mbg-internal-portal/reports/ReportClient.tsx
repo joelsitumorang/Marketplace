@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FileSpreadsheet, Filter } from "lucide-react";
+import { FileSpreadsheet, Filter, CheckCircle } from "lucide-react";
 import DateRangePicker, { DateRange } from "@/components/DateRangePicker";
+import { toast } from "sonner";
 
 const toLocalIsoDateString = (date: Date | null): string => {
   if (!date) return "";
@@ -43,6 +44,7 @@ type Transaction = {
   returnReason?: string;
   status: string;
   dpDeadline?: string;
+  installments?: { amount: string | number }[];
 };
 
 type Props = {
@@ -75,6 +77,12 @@ export default function ReportClient({
 
   const [statusFilter, setStatusFilter] = useState("ALL");
 
+  // --- DP Pelunasan State ---
+  const [payDpTx, setPayDpTx] = useState<Transaction | null>(null);
+  const [pelunasanAmount, setPelunasanAmount] = useState("");
+  const [pelunasanMethod, setPelunasanMethod] = useState("TUNAI");
+  const [isPaying, setIsPaying] = useState(false);
+
   // Sync state with URL props when they change (e.g. on navigation or browser back/forward)
   useEffect(() => {
     setBranch(currentBranch);
@@ -98,6 +106,44 @@ export default function ReportClient({
     }
 
     router.push(`/mbg-internal-portal/reports?${params.toString()}`);
+  };
+
+  const handlePelunasanSubmit = async () => {
+    if (!payDpTx) return;
+    const amount = Number(pelunasanAmount);
+    if (!amount || amount <= 0) {
+      toast.error("Nominal pelunasan tidak valid.");
+      return;
+    }
+    
+    setIsPaying(true);
+    try {
+      const res = await fetch("/api/kasir/pelunasan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transactionId: payDpTx.id,
+          amount,
+          paymentMethod: pelunasanMethod,
+          processedBy: "Admin" 
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Pembayaran cicilan berhasil. ${data.isLunas ? "Transaksi LUNAS!" : ""}`);
+        setPayDpTx(null);
+        setPelunasanAmount("");
+        // Reload page to reflect new status
+        window.location.reload();
+      } else {
+        toast.error(data.message || "Gagal memproses pelunasan.");
+      }
+    } catch (e) {
+      toast.error("Terjadi kesalahan jaringan.");
+    } finally {
+      setIsPaying(false);
+    }
   };
 
   const handleBranchChange = (newBranch: string) => {
@@ -325,8 +371,11 @@ export default function ReportClient({
                         </div>
                       )}
                       {!tx.isReturned && tx.status === "DP" && tx.dpDeadline && (
-                        <div className="text-[10px] text-orange-600 mt-1">
+                        <div className="text-[10px] text-orange-600 mt-1 flex items-center gap-2">
                           Tempo: {new Date(tx.dpDeadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                          <button onClick={() => setPayDpTx(tx)} className="px-2 py-1 bg-brand-500 text-white rounded text-[9px] hover:bg-brand-600 font-bold ml-2">
+                            Bayar Pelunasan
+                          </button>
                         </div>
                       )}
                     </td>
@@ -410,6 +459,13 @@ export default function ReportClient({
               <span className="truncate pr-2">{formatBranchName(tx.branchName)}</span>
               <span className="font-medium whitespace-nowrap shrink-0">Kasir: {tx.cashierName}</span>
             </div>
+            {!tx.isReturned && tx.status === "DP" && (
+              <div className="pt-2 border-t border-slate-50">
+                <button onClick={() => setPayDpTx(tx)} className="w-full py-1.5 bg-brand-500 text-white rounded-lg text-xs hover:bg-brand-600 font-bold">
+                  Bayar Pelunasan
+                </button>
+              </div>
+            )}
           </div>
         ))}
         {initialTransactions.length === 0 && (
@@ -418,6 +474,87 @@ export default function ReportClient({
           </div>
         )}
       </div>
+
+      {payDpTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Bayar Pelunasan</h3>
+              <p className="text-xs text-slate-500 mt-1">SKU: {payDpTx.sku} - {payDpTx.item?.title}</p>
+            </div>
+            
+            <div className="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-600">Total Tagihan:</span>
+                <span className="font-bold">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(payDpTx.soldPrice))}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-600">Sudah Dibayar:</span>
+                <span className="font-bold text-green-600">
+                  {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(
+                    payDpTx.installments?.reduce((sum, inst) => sum + Number(inst.amount), 0) || 0
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-slate-200 pt-2">
+                <span className="text-slate-600 font-bold">Kekurangan:</span>
+                <span className="font-black text-rose-600">
+                  {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(
+                    Number(payDpTx.soldPrice) - (payDpTx.installments?.reduce((sum, inst) => sum + Number(inst.amount), 0) || 0)
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Metode Pembayaran</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["TUNAI", "TRANSFER"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setPelunasanMethod(m)}
+                    className={`py-2 px-1 text-xs font-bold rounded-lg border transition-colors ${
+                      pelunasanMethod === m
+                        ? "bg-brand-50 border-brand-500 text-brand-700"
+                        : "bg-white border-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Nominal Pembayaran (Rp)</label>
+              <input
+                type="text"
+                placeholder="Masukkan nominal"
+                value={pelunasanAmount}
+                onChange={(e) => setPelunasanAmount(e.target.value.replace(/\D/g, ""))}
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-brand-500"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setPayDpTx(null)}
+                className="flex-1 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors"
+                disabled={isPaying}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handlePelunasanSubmit}
+                disabled={isPaying || !pelunasanAmount}
+                className="flex-1 py-2.5 rounded-lg bg-brand-600 text-white font-bold hover:bg-brand-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isPaying ? "Memproses..." : <><CheckCircle className="w-4 h-4" /> Simpan</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

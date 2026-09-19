@@ -78,7 +78,8 @@ export default async function SalesReportPage({
       where,
       orderBy: { transactionDate: "desc" },
       include: {
-        item: { select: { title: true, category: true, hargaMasuk: true } }
+        item: { select: { title: true, category: true, hargaMasuk: true } },
+        installments: true
       }
     }),
     isSuperAdmin ? prisma.salesTransaction.groupBy({
