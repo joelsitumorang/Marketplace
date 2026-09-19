@@ -139,7 +139,7 @@ export async function GET(request: Request) {
       })
     ]);
 
-    const totalReturAmount = returAmountAgg._sum.refundAmount || 0;
+    const totalReturAmount = Number(returAmountAgg._sum.refundAmount || 0);
 
     // 3. Summarize metrics
     const totalSold = sales.length;

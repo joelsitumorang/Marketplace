@@ -111,7 +111,7 @@ async function DashboardData() {
     })
   ]);
 
-  const totalReturAmount = returAmountAgg._sum.refundAmount || 0;
+  const totalReturAmount = Number(returAmountAgg._sum.refundAmount || 0);
 
   const totalSold = sales.length;
   const totalRevenue = sales.reduce((sum, tx) => sum + Number(tx.soldPrice), 0);
