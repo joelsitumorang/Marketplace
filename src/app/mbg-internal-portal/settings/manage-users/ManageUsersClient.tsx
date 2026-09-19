@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@prisma/client";
 import { UserPlus, Shield, User as UserIcon, MapPin, Mail, Pencil, X } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function ManageUsersClient({ initialUsers }: { initialUsers: User[] }) {
   const [formData, setFormData] = useState({
@@ -99,12 +100,16 @@ export default function ManageUsersClient({ initialUsers }: { initialUsers: User
     }
   };
 
-  const handleDeleteUser = async () => {
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+  const handleDeleteUser = () => {
     if (!selectedUser) return;
-    
-    if (!window.confirm(`Apakah Anda yakin ingin menghapus pengguna "${selectedUser.nama_lengkap}"? Tindakan ini tidak dapat dibatalkan.`)) {
-      return;
-    }
+    setShowConfirmDelete(true);
+  };
+
+  const submitDeleteUser = async () => {
+    if (!selectedUser) return;
+    setShowConfirmDelete(false);
     
     setEditLoading(true);
     setEditError("");
@@ -366,6 +371,16 @@ export default function ManageUsersClient({ initialUsers }: { initialUsers: User
           </div>
         </div>
       )}
+      {/* Delete User Confirm */}
+      <ConfirmDialog
+        isOpen={showConfirmDelete}
+        title="Hapus Pengguna"
+        message={`Apakah Anda yakin ingin menghapus pengguna "${selectedUser?.nama_lengkap}"? Tindakan ini tidak dapat dibatalkan.`}
+        onConfirm={submitDeleteUser}
+        onCancel={() => setShowConfirmDelete(false)}
+        confirmText="Ya, Hapus Pengguna"
+        isDestructive
+      />
     </div>
   );
 }

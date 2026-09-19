@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import imageCompression from "browser-image-compression";
 import { UploadCloud, CheckCircle, AlertCircle, X, Video, QrCode } from "lucide-react";
+import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 
 type CompressedImage = {
@@ -126,7 +127,7 @@ function AddItemForm() {
       );
     } catch (err: any) {
       console.error("Failed to upload variant image:", err);
-      alert(err.message || "Gagal mengunggah gambar untuk sub-barang.");
+      toast.error(err.message || "Gagal mengunggah gambar untuk sub-barang.");
     } finally {
       setLoading(false);
     }

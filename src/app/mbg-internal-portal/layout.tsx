@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/session";
 import AdminSidebar from "@/components/AdminSidebar";
 import AdminBottomNav from "@/components/AdminBottomNav";
+import { Toaster } from "sonner";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -24,6 +25,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {/* Mobile Bottom Navigation */}
       <AdminBottomNav />
+      
+      <Toaster position="top-right" richColors closeButton />
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   Video,
   QrCode,
 } from "lucide-react";
+import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -355,10 +356,10 @@ export default function ItemsTableClient({
         setEditHargaMasukText(resData.data.hargaMasuk ? formatRupiahMask(String(resData.data.hargaMasuk)) : "");
         setCompressedImages(resData.data.images.map((url: string) => ({ url })));
       } else {
-        alert(resData.message || "Gagal memuat detail barang.");
+        toast.error(resData.message || "Gagal memuat detail barang.");
       }
     } catch (err) {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.");
     } finally {
       setLoadingDetail(false);
     }
@@ -399,10 +400,10 @@ export default function ItemsTableClient({
         setSelectedItem(null);
         router.refresh();
       } else {
-        alert(resData.message || "Gagal menyimpan perubahan barang.");
+        toast.error(resData.message || "Gagal menyimpan perubahan barang.");
       }
     } catch (err) {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.");
     } finally {
       setActionLoading(false);
     }
@@ -426,10 +427,10 @@ export default function ItemsTableClient({
         setSelectedItem(null);
         router.refresh();
       } else {
-        alert(data.message || "Gagal menghapus barang.");
+        toast.error(data.message || "Gagal menghapus barang.");
       }
     } catch (err) {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.");
     } finally {
       setActionLoading(false);
     }
@@ -537,7 +538,7 @@ export default function ItemsTableClient({
           newImages.push({ url });
         } catch (err: any) {
           console.error("Failed to upload image:", err);
-          alert(err.message || `Gagal mengunggah gambar ke-${i + 1}`);
+          toast.error(err.message || `Gagal mengunggah gambar ke-${i + 1}`);
         }
       }
       setCompressedImages((prev) => [...prev, ...newImages]);

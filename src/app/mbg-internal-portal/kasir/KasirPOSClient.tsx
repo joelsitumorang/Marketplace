@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,8 +88,6 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [skuInput, setSkuInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [lastTx, setLastTx] = useState<LastTx | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [scanCooldown, setScanCooldown] = useState(false);
@@ -142,7 +142,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
           if (updatedItem.status === 'Terjual') {
             setCartItems((prev) => {
               if (prev.some(item => item.sku === updatedItem.sku)) {
-                setError(`Peringatan: Barang ${updatedItem.sku} baru saja terjual di kasir lain!`);
+                toast.error(`Peringatan: Barang ${updatedItem.sku} baru saja terjual di kasir lain!`);
                 playBeep(false);
               }
               return prev;
@@ -160,7 +160,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
   // ─── Camera Scanner ───────────────────────────────────────────────────────
 
   const startCamera = useCallback(async () => {
-    setError("");
+    toast.error("");
     try {
       const { Html5Qrcode } = await import("html5-qrcode");
       
@@ -183,7 +183,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
       setCameraActive(true);
     } catch (err: any) {
       console.error("Camera error:", err);
-      setError("Gagal mengakses kamera. Pastikan izin kamera telah diberikan.");
+      toast.error("Gagal mengakses kamera. Pastikan izin kamera telah diberikan.");
     }
   }, []);
 
@@ -221,15 +221,15 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
     
     // Check if already in cart
     if (cartItems.some((item) => item.sku === sku)) {
-      setError(`Barang ${sku} sudah ada di keranjang.`);
+      toast.error(`Barang ${sku} sudah ada di keranjang.`);
       playBeep(false);
       setTimeout(() => setIsProcessing(false), 1500);
       return;
     }
 
     setLoading(true);
-    setError("");
-    setSuccess("");
+    toast.error("");
+    toast.success("");
 
     try {
       const res = await fetch(`/api/kasir/scan?sku=${encodeURIComponent(sku)}`);
@@ -251,14 +251,14 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
         };
         setCartItems((prev) => [...prev, newItem]);
         playBeep(true);
-        setSuccess(`✓ ${newItem.title} ditambahkan ke keranjang`);
-        setTimeout(() => setSuccess(""), 3000);
+        toast.success(`✓ ${newItem.title} ditambahkan ke keranjang`);
+        setTimeout(() => toast.success(""), 3000);
       } else {
-        setError(data.message || "Barang tidak ditemukan.");
+        toast.error(data.message || "Barang tidak ditemukan.");
         playBeep(false);
       }
     } catch (err) {
-      setError("Kesalahan jaringan saat mencari barang.");
+      toast.error("Kesalahan jaringan saat mencari barang.");
       playBeep(false);
     } finally {
       setLoading(false);
@@ -319,11 +319,17 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
 
   // ─── Checkout ─────────────────────────────────────────────────────────────
 
-  const handleCheckout = async () => {
+  const [showConfirmCheckout, setShowConfirmCheckout] = useState(false);
+
+  const handleCheckout = () => {
     if (cartItems.length === 0) return;
-    if (!confirm("Apakah Anda yakin ingin menyelesaikan transaksi ini?")) return;
+    setShowConfirmCheckout(true);
+  };
+
+  const submitCheckout = async () => {
+    setShowConfirmCheckout(false);
     setLoading(true);
-    setError("");
+    toast.error("");
 
     try {
       const payload = {
@@ -362,7 +368,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
           totalDiscount,
         });
 
-        setSuccess(`Transaksi Berhasil! ${cartItems.length} barang telah terjual.`);
+        toast.success(`Transaksi Berhasil! ${cartItems.length} barang telah terjual.`);
         setCartItems([]);
         clearCartStorage();
 
@@ -370,10 +376,10 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
           window.print();
         }, 500);
       } else {
-        setError(data.message || "Gagal memproses transaksi.");
+        toast.error(data.message || "Gagal memproses transaksi.");
       }
     } catch (err) {
-      setError("Kesalahan jaringan saat proses transaksi.");
+      toast.error("Kesalahan jaringan saat proses transaksi.");
     } finally {
       setLoading(false);
     }
@@ -477,21 +483,6 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                 </button>
               </form>
             </div>
-
-            {/* Feedback Messages */}
-            {error && (
-              <div className="bg-red-50 rounded-xl p-3.5 border border-red-200 flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2 shadow-sm">
-                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-red-700 font-medium leading-relaxed">{error}</p>
-                <button onClick={() => setError("")} className="ml-auto flex-shrink-0"><X className="w-3.5 h-3.5 text-red-400" /></button>
-              </div>
-            )}
-            {success && (
-              <div className="bg-green-50 rounded-xl p-3.5 border border-green-200 flex items-start gap-2.5 animate-in fade-in slide-in-from-top-2 shadow-sm">
-                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-green-700 font-medium leading-relaxed">{success}</p>
-              </div>
-            )}
           </div>
 
           {/* ═══ RIGHT COLUMN: Cart & Checkout ═══ */}
@@ -735,6 +726,15 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
           />
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showConfirmCheckout}
+        title="Konfirmasi Pembayaran"
+        message="Apakah Anda yakin ingin memproses pembayaran dan menyelesaikan transaksi ini? Pastikan semua barang sudah sesuai."
+        onConfirm={submitCheckout}
+        onCancel={() => setShowConfirmCheckout(false)}
+        confirmText="Ya, Proses Transaksi"
+      />
     </>
   );
 }

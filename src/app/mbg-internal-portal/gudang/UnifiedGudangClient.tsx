@@ -194,7 +194,7 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
   const handleCreateNew = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formBaru.customerPhone.startsWith("08")) {
-      showToast("Nomor telepon harus diawali dengan '08'.", "error");
+      toast.error("Nomor telepon harus diawali dengan '08'.");
       return;
     }
     const res = await fetch("/api/admin/gudang/lifecycle", {
@@ -203,7 +203,7 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
       body: JSON.stringify({ action: "CREATE_NEW", ...formBaru })
     });
     if (res.ok) {
-      showToast("Barang berhasil didaftarkan!");
+      toast.success("Barang berhasil didaftarkan!");
       const today = new Date().toISOString().split("T")[0];
       const due = new Date();
       due.setMonth(due.getMonth() + 1);
@@ -225,24 +225,32 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
     });
     if (res.ok) {
       if (activeTab === "PROSES_LELANG") {
-        showToast("Kontrak Karantina Berhasil Diperpanjang!");
+        toast.success("Kontrak Karantina Berhasil Diperpanjang!");
       } else {
-        showToast("Kontrak berhasil diperpanjang!");
+        toast.success("Kontrak berhasil diperpanjang!");
       }
       setExtensionModalOpen(false);
       fetchLifecycleData(activeTab, page);
     }
   };
 
-  const handleTebus = async (id: string) => {
-    if (!confirm("Konfirmasi proses tebus barang?")) return;
+  const [showConfirmTebus, setShowConfirmTebus] = useState<string | null>(null);
+
+  const handleTebus = (id: string) => {
+    setShowConfirmTebus(id);
+  };
+
+  const submitTebus = async () => {
+    if (!showConfirmTebus) return;
+    const id = showConfirmTebus;
+    setShowConfirmTebus(null);
     const res = await fetch("/api/admin/gudang/lifecycle", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "TEBUS", contractId: id })
     });
     if (res.ok) {
-      showToast("Barang berhasil ditebus!");
+      toast.success("Barang berhasil ditebus!");
       fetchLifecycleData(activeTab, page);
     }
   };
@@ -282,11 +290,11 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
   const handlePostKatalogFromForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auctionSellingPrice) {
-      showToast("Harga Jual Appraisal wajib diisi.", "error");
+      toast.error("Harga Jual Appraisal wajib diisi.");
       return;
     }
     if (!auctionNotes) {
-      showToast("Catatan Kondisi Fisik wajib diisi.", "error");
+      toast.error("Catatan Kondisi Fisik wajib diisi.");
       return;
     }
     
@@ -305,7 +313,7 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
       })
     });
     if (res.ok) {
-      showToast("Berhasil disiapkan untuk LELANG!");
+      toast.success("Berhasil disiapkan untuk LELANG!");
       setAuctionPrepMode(false);
       setAuctionPrepTarget(null);
       setAuctionNotes("");
@@ -316,7 +324,7 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
       setAuctionImages("");
       setActiveTab("ETALASE_LELANG");
     } else {
-      showToast("Gagal memposting ke katalog lelang.", "error");
+      toast.error("Gagal memposting ke katalog lelang.");
     }
   };
 
@@ -1088,26 +1096,19 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
         </div>
       )}
 
-      {/* TOAST NOTIFICATION */}
-      <div 
-        className={`fixed top-5 right-5 z-50 transition-all duration-500 transform ${
-          toast.show ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="bg-white border border-slate-100 rounded-xl shadow-md p-4 flex items-center gap-3">
-          {toast.type === "success" ? (
-            <div className="bg-green-50 text-green-500 rounded-full p-1.5 flex-shrink-0">
-              <CheckCircle size={20} strokeWidth={2.5} />
-            </div>
-          ) : (
-            <div className="bg-red-50 text-red-500 rounded-full p-1.5 flex-shrink-0">
-              <AlertCircle size={20} strokeWidth={2.5} />
-            </div>
-          )}
-          <p className="text-sm font-bold text-slate-800">{toast.message}</p>
-        </div>
-      </div>
-
-    </div>
+      
+      <ConfirmDialog
+        isOpen={!!showConfirmTebus}
+        title="Konfirmasi Tebus"
+        message="Apakah Anda yakin ingin melakukan proses tebus untuk barang ini?"
+        onConfirm={submitTebus}
+        onCancel={() => setShowConfirmTebus(null)}
+        confirmText="Ya, Tebus Barang"
+      />
   );
 }
+
+
+
+
+
