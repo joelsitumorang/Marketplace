@@ -1105,10 +1105,6 @@ export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, ca
         onCancel={() => setShowConfirmTebus(null)}
         confirmText="Ya, Tebus Barang"
       />
+    </div>
   );
 }
-
-
-
-
-
