@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Package, ShieldCheck, RefreshCw, Gavel, AlertTriangle, Archive, Search, Lock, Loader2, DollarSign, Activity, BarChart3, CheckCircle, AlertCircle, Eye } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 import DatePicker from "@/components/DatePicker";
+import { toast } from "sonner";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 type TabType = "BARU" | "STOK_AKTIF" | "PERPANJANG" | "PROSES_LELANG" | "ETALASE_LELANG" | "ARSIP";
 type ViewMode = "DASHBOARD" | "LIFECYCLE";
@@ -20,14 +22,6 @@ type Props = {
 
 export default function UnifiedGudangClient({ dashboardData, lifecycleCounts, cashierName }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>("DASHBOARD");
-
-  const [toast, setToast] = useState<{show: boolean, message: string, type: "success" | "error"}>({ show: false, message: "", type: "success" });
-  const showToast = (message: string, type: "success" | "error" = "success") => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 3000);
-  };
 
   // ==========================================
   // DASHBOARD STATE
