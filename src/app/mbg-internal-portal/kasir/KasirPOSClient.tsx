@@ -98,6 +98,14 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
   const [scanCooldown, setScanCooldown] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // --- Pembayaran & DP State ---
+  const [paymentMethod, setPaymentMethod] = useState<"TUNAI" | "TRANSFER" | "SPLIT">("TUNAI");
+  const [splitCash, setSplitCash] = useState<string>("");
+  const [splitTransfer, setSplitTransfer] = useState<string>("");
+  
+  const [isDP, setIsDP] = useState(false);
+  const [dpAmount, setDpAmount] = useState<string>("");
+
   const inputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<any>(null);
   const cooldownRef = useRef<NodeJS.Timeout | null>(null);
