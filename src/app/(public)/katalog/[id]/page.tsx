@@ -9,6 +9,73 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
+import { Metadata, ResolvingMetadata } from "next";
+
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { id } = await params;
+  const item = await prisma.auctionItem.findUnique({
+    where: { id: parseInt(id) },
+    select: { title: true, description: true, images: true, thumbnailIndex: true },
+  });
+
+  if (!item) {
+    return {
+      title: "Barang Tidak Ditemukan",
+    };
+  }
+
+  // Ambil gambar cover berdasarkan thumbnailIndex, default ke gambar pertama
+  let imageUrl = (item.images as string[])?.[0] || "";
+  if (
+    item.thumbnailIndex !== null && 
+    item.thumbnailIndex !== undefined && 
+    item.images && 
+    (item.images as string[])[item.thumbnailIndex]
+  ) {
+    imageUrl = (item.images as string[])[item.thumbnailIndex];
+  }
+
+  // Gunakan baseUrl dummy atau origin host untuk relative path
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://mbgpasuruan.co.id";
+  let absoluteImageUrl = imageUrl;
+  
+  if (imageUrl && imageUrl.startsWith("/")) {
+    absoluteImageUrl = `${baseUrl}${imageUrl}`;
+  } else if (!imageUrl) {
+    absoluteImageUrl = `${baseUrl}/logo.png`;
+  }
+
+  const plainDescription = item.description ? item.description.replace(/<[^>]+>/g, '').substring(0, 160) : `Penawaran spesial ${item.title} di MBG Lelang.`;
+
+  return {
+    title: `${item.title} | MBG Lelang`,
+    description: plainDescription,
+    openGraph: {
+      title: `${item.title} | MBG Lelang`,
+      description: plainDescription,
+      images: [
+        {
+          url: absoluteImageUrl,
+          width: 800,
+          height: 600,
+          alt: item.title,
+        },
+      ],
+      locale: "id_ID",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${item.title} | MBG Lelang`,
+      description: plainDescription,
+      images: [absoluteImageUrl],
+    },
+  };
+}
+
 export default async function DetailPage({ params }: Props) {
   const { id } = await params;
 

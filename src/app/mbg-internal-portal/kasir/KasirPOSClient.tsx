@@ -669,12 +669,12 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                   {/* Payment Method Selection */}
                   <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm mt-3">
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metode Pembayaran</p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-wrap sm:grid sm:grid-cols-3 gap-2">
                       {(["TUNAI", "TRANSFER", "SPLIT"] as const).map((m) => (
                         <button
                           key={m}
                           onClick={() => setPaymentMethod(m)}
-                          className={`py-2 px-1 text-xs font-bold rounded-lg border transition-colors ${
+                          className={`flex-1 min-w-[30%] py-2 px-1 text-xs font-bold rounded-lg border transition-colors ${
                             paymentMethod === m
                               ? "bg-brand-50 border-brand-500 text-brand-700"
                               : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -686,7 +686,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                     </div>
 
                     {paymentMethod === "SPLIT" && (
-                      <div className="grid grid-cols-2 gap-3 mt-3">
+                      <div className="flex flex-col sm:grid sm:grid-cols-2 gap-3 mt-3">
                         <div>
                           <label className="text-[10px] font-bold text-slate-500">Tunai (Rp)</label>
                           <input
@@ -716,7 +716,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
 
                   {/* DP Toggle */}
                   <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 mt-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-bold text-slate-700">Bayar Sebagian (DP)</p>
                         <p className="text-[10px] text-slate-500 mt-0.5">Tempo maks 3 Hari</p>
