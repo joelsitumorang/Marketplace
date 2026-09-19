@@ -66,17 +66,25 @@ model AuctionItem {
 
 /// Records completed sales transactions logged by cashiers at the physical store.
 model SalesTransaction {
-  id              Int         @id @default(autoincrement())
-  itemId          Int         @map("item_id")
+  id              Int           @id @default(autoincrement())
+  itemId          Int           @map("item_id")
   sku             String
-  soldPrice       Decimal     @map("sold_price") @db.Decimal(12, 2)
-  branchName      String      @map("branch_name")
-  cashierName     String      @map("cashier_name")
-  transactionDate DateTime    @default(now()) @map("transaction_date")
-  item            AuctionItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  isReturned      Boolean     @default(false) @map("is_returned")
-  returnReason    String?     @map("return_reason")
+  soldPrice       Decimal       @map("sold_price") @db.Decimal(12, 2)
+  branchName      String        @map("branch_name")
+  cashierName     String        @map("cashier_name")
+  transactionDate DateTime      @default(now()) @map("transaction_date")
+  item            AuctionItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  isReturned      Boolean       @default(false) @map("is_returned")
+  returnReason    String?       @map("return_reason")
   returns         SalesReturn[]
+
+  // --- Metode Pembayaran & DP ---
+  paymentMethod  PaymentMethod        @default(TUNAI) @map("payment_method")
+  amountCash     Decimal?             @map("amount_cash") @db.Decimal(12, 2)
+  amountTransfer Decimal?             @map("amount_transfer") @db.Decimal(12, 2)
+  status         TransactionStatus    @default(LUNAS)
+  dpDeadline     DateTime?            @map("dp_deadline")
+  installments   PaymentInstallment[]
 
   @@index([transactionDate])
   @@index([branchName])
@@ -181,12 +189,12 @@ model AuditLog {
 // ─── Return System ───────────────────────────────────────────────
 
 enum ReturnReason {
-  TIDAK_SESUAI_DESKRIPSI   // kondisi/spesifikasi beda dari katalog
-  RUSAK_SAAT_DITERIMA      // cacat yang tidak terdeteksi saat serah terima
-  KELENGKAPAN_KURANG       // charger, box, dus, kunci, dll tidak lengkap
-  SALAH_INPUT_KASIR        // kesalahan administratif, bukan keluhan pembeli
-  BERUBAH_PIKIRAN          // pembeli batal, barang tidak bermasalah
-  LAINNYA                  // wajib mengisi penjelasan tambahan
+  TIDAK_SESUAI_DESKRIPSI // kondisi/spesifikasi beda dari katalog
+  RUSAK_SAAT_DITERIMA // cacat yang tidak terdeteksi saat serah terima
+  KELENGKAPAN_KURANG // charger, box, dus, kunci, dll tidak lengkap
+  SALAH_INPUT_KASIR // kesalahan administratif, bukan keluhan pembeli
+  BERUBAH_PIKIRAN // pembeli batal, barang tidak bermasalah
+  LAINNYA // wajib mengisi penjelasan tambahan
 }
 
 enum ReturnCondition {
@@ -205,38 +213,63 @@ enum ReturnStatus {
 /// Returns within 3 calendar days are auto-approved; beyond that requires SUPERADMIN approval.
 /// Hard limit: returns beyond 30 calendar days are rejected outright.
 model SalesReturn {
-  id                 String          @id @default(cuid())
-  salesTransactionId Int             @map("sales_transaction_id")
+  id                 String           @id @default(cuid())
+  salesTransactionId Int              @map("sales_transaction_id")
   salesTransaction   SalesTransaction @relation(fields: [salesTransactionId], references: [id])
-  auctionItemId      Int             @map("auction_item_id")
-  auctionItem        AuctionItem     @relation(fields: [auctionItemId], references: [id])
+  auctionItemId      Int              @map("auction_item_id")
+  auctionItem        AuctionItem      @relation(fields: [auctionItemId], references: [id])
 
   // --- Alasan ---
-  reason             ReturnReason
-  reasonNote         String?         @map("reason_note")
-  condition          ReturnCondition
+  reason     ReturnReason
+  reasonNote String?         @map("reason_note")
+  condition  ReturnCondition
 
   // --- Uang ---
-  refundAmount       Decimal         @map("refund_amount") @db.Decimal(14, 2)
-  refundMethod       String          @map("refund_method")
+  refundAmount Decimal @map("refund_amount") @db.Decimal(14, 2)
+  refundMethod String  @map("refund_method")
 
   // --- Waktu & persetujuan ---
-  daysSincePurchase  Int             @map("days_since_purchase")
-  requiresApproval   Boolean         @default(false) @map("requires_approval")
-  status             ReturnStatus    @default(DISETUJUI)
-  approvalNote       String?         @map("approval_note")
-  approvedById       String?         @map("approved_by_id")
-  approvedBy         User?           @relation("ReturnApprover", fields: [approvedById], references: [id])
-  approvedAt         DateTime?       @map("approved_at")
+  daysSincePurchase Int          @map("days_since_purchase")
+  requiresApproval  Boolean      @default(false) @map("requires_approval")
+  status            ReturnStatus @default(DISETUJUI)
+  approvalNote      String?      @map("approval_note")
+  approvedById      String?      @map("approved_by_id")
+  approvedBy        User?        @relation("ReturnApprover", fields: [approvedById], references: [id])
+  approvedAt        DateTime?    @map("approved_at")
 
   // --- Jejak ---
-  processedById      String          @map("processed_by_id")
-  processedBy        User            @relation("ReturnProcessor", fields: [processedById], references: [id])
-  asalCabang         String          @map("asal_cabang")
-  createdAt          DateTime        @default(now()) @map("created_at")
+  processedById String   @map("processed_by_id")
+  processedBy   User     @relation("ReturnProcessor", fields: [processedById], references: [id])
+  asalCabang    String   @map("asal_cabang")
+  createdAt     DateTime @default(now()) @map("created_at")
 
   @@index([status, asalCabang])
   @@index([salesTransactionId])
   @@map("sales_returns")
 }
 
+enum PaymentMethod {
+  TUNAI
+  TRANSFER
+  SPLIT
+}
+
+enum TransactionStatus {
+  LUNAS
+  DP
+  RETUR
+}
+
+model PaymentInstallment {
+  id                 Int           @id @default(autoincrement())
+  salesTransactionId Int           @map("sales_transaction_id")
+  amount             Decimal       @db.Decimal(12, 2)
+  paymentDate        DateTime      @default(now()) @map("payment_date")
+  paymentMethod      PaymentMethod @map("payment_method")
+  processedBy        String        @map("processed_by")
+
+  salesTransaction SalesTransaction @relation(fields: [salesTransactionId], references: [id], onDelete: Cascade)
+
+  @@index([salesTransactionId])
+  @@map("payment_installments")
+}
