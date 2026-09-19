@@ -87,10 +87,18 @@ export default function ReturFormClient({ cashierName, branchName, initialSku, u
       const data = await res.json();
       
       if (data.success) {
-        setTransaction(data.transaction);
-        setRefundAmount(data.transaction.soldPrice); // Default to full price
+        const lookupData = data.data;
+        setTransaction({
+          ...lookupData.transaction,
+          daysSincePurchase: lookupData.daysSincePurchase,
+          canReturn: lookupData.canReturn,
+          requiresApproval: lookupData.requiresApproval,
+          isBlocked: lookupData.isBlocked,
+          hasPendingReturn: lookupData.hasPendingReturn,
+        });
+        setRefundAmount(Number(lookupData.transaction.soldPrice));
       } else {
-        setLookupError(data.error || "Transaksi tidak ditemukan.");
+        setLookupError(data.message || "Transaksi tidak ditemukan.");
       }
     } catch (error) {
       setLookupError("Terjadi kesalahan sistem saat mencari transaksi.");
@@ -112,7 +120,7 @@ export default function ReturFormClient({ cashierName, branchName, initialSku, u
       return;
     }
 
-    if (refundAmount === "" || refundAmount < 0 || refundAmount > transaction.soldPrice) {
+    if (refundAmount === "" || refundAmount < 0 || refundAmount > Number(transaction.soldPrice)) {
       setSubmitError("Nominal refund tidak valid. Maksimal sebesar harga jual awal.");
       return;
     }
@@ -122,13 +130,12 @@ export default function ReturFormClient({ cashierName, branchName, initialSku, u
 
     try {
       const payload = {
-        sku: transaction.sku,
+        salesTransactionId: transaction.id,
         reason,
-        reasonDetail: reasonDetail.trim(),
+        reasonNote: reasonDetail.trim(),
         condition,
         refundAmount: Number(refundAmount),
         refundMethod,
-        requiresApproval
       };
 
       const res = await fetch("/api/admin/retur", {
@@ -142,7 +149,7 @@ export default function ReturFormClient({ cashierName, branchName, initialSku, u
       if (data.success) {
         setShowSuccessModal(true);
       } else {
-        setSubmitError(data.error || "Gagal mengajukan retur.");
+        setSubmitError(data.message || "Gagal mengajukan retur.");
       }
     } catch (error) {
       setSubmitError("Terjadi kesalahan sistem saat menyimpan data.");

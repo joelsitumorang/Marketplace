@@ -60,7 +60,7 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
   // Approval Modal State
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvalTarget, setApprovalTarget] = useState<any>(null);
-  const [approvalAction, setApprovalAction] = useState<"SETUJUI" | "TOLAK" | null>(null);
+  const [approvalAction, setApprovalAction] = useState<"DISETUJUI" | "DITOLAK" | null>(null);
   const [approvalNote, setApprovalNote] = useState("");
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [approvalError, setApprovalError] = useState("");
@@ -118,8 +118,8 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
     fetchPendingCount();
   }, [fetchPendingCount, returns]); // Refresh count when returns change
 
-  const formatCurrency = (amount: number) => {
-    return amount?.toLocaleString("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 });
+  const formatCurrency = (amount: number | string) => {
+    return Number(amount)?.toLocaleString("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 });
   };
 
   const formatDate = (dateString: string) => {
@@ -146,7 +146,7 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: approvalAction,
-          note: approvalNote,
+          approvalNote: approvalNote,
         }),
       });
 
@@ -159,7 +159,7 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
         fetchReturns();
         fetchPendingCount();
       } else {
-        setApprovalError(data.error || "Gagal memproses persetujuan.");
+        setApprovalError(data.message || "Gagal memproses persetujuan.");
       }
     } catch (error) {
       setApprovalError("Terjadi kesalahan jaringan.");
@@ -168,7 +168,7 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
     }
   };
 
-  const openApprovalModal = (retur: any, action: "SETUJUI" | "TOLAK") => {
+  const openApprovalModal = (retur: any, action: "DISETUJUI" | "DITOLAK") => {
     setApprovalTarget(retur);
     setApprovalAction(action);
     setApprovalNote("");
@@ -316,8 +316,8 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
                           {formatDate(retur.createdAt)}
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <div className="font-mono text-slate-500 text-xs">{retur.sku}</div>
-                          <div className="font-medium text-slate-900 line-clamp-2">{retur.item?.title || "Item Tidak Diketahui"}</div>
+                          <div className="font-mono text-slate-500 text-xs">{retur.salesTransaction?.sku}</div>
+                          <div className="font-medium text-slate-900 line-clamp-2">{retur.auctionItem?.title || "Item Tidak Diketahui"}</div>
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <div className="text-slate-900 font-medium">{RETURN_REASON_LABELS[retur.reason] || retur.reason}</div>
@@ -332,19 +332,19 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <div className="text-slate-900">{retur.cashierName}</div>
-                          <div className="text-slate-500 text-xs">{retur.processedBy}</div>
+                          <div className="text-slate-900">{retur.salesTransaction?.cashierName}</div>
+                          <div className="text-slate-500 text-xs">{retur.processedBy?.nama_lengkap}</div>
                         </td>
                         {isSuperAdmin && activeTab === "MENUNGGU_PERSETUJUAN" && (
                           <td className="px-6 py-4 text-sm text-right space-x-2 whitespace-nowrap">
                             <button
-                              onClick={() => openApprovalModal(retur, "SETUJUI")}
+                              onClick={() => openApprovalModal(retur, "DISETUJUI")}
                               className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-medium transition-colors"
                             >
                               Setujui
                             </button>
                             <button
-                              onClick={() => openApprovalModal(retur, "TOLAK")}
+                              onClick={() => openApprovalModal(retur, "DITOLAK")}
                               className="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-medium transition-colors"
                             >
                               Tolak
@@ -363,8 +363,8 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
                   <div key={retur.id} className="p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-mono text-xs text-slate-500 mb-1">{retur.sku}</div>
-                        <div className="font-medium text-slate-900 text-sm line-clamp-2">{retur.item?.title || "Item Tidak Diketahui"}</div>
+                        <div className="font-mono text-xs text-slate-500 mb-1">{retur.salesTransaction?.sku}</div>
+                        <div className="font-medium text-slate-900 text-sm line-clamp-2">{retur.auctionItem?.title || "Item Tidak Diketahui"}</div>
                       </div>
                       <span className={`shrink-0 inline-flex px-2.5 py-1 rounded-full text-[10px] font-medium border ${RETURN_STATUS_CONFIG[retur.status]?.className || "bg-slate-100"}`}>
                         {RETURN_STATUS_CONFIG[retur.status]?.label || retur.status}
@@ -386,20 +386,20 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
                       </div>
                       <div>
                         <span className="text-slate-500 block mb-0.5">Pemroses</span>
-                        <span className="text-slate-700">{retur.cashierName}</span>
+                        <span className="text-slate-700">{retur.processedBy?.nama_lengkap}</span>
                       </div>
                     </div>
 
                     {isSuperAdmin && activeTab === "MENUNGGU_PERSETUJUAN" && (
                       <div className="flex gap-2 pt-3 border-t border-slate-100 mt-3">
                         <button
-                          onClick={() => openApprovalModal(retur, "SETUJUI")}
+                          onClick={() => openApprovalModal(retur, "DISETUJUI")}
                           className="flex-1 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-xs font-medium transition-colors"
                         >
                           Setujui
                         </button>
                         <button
-                          onClick={() => openApprovalModal(retur, "TOLAK")}
+                          onClick={() => openApprovalModal(retur, "DITOLAK")}
                           className="flex-1 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl text-xs font-medium transition-colors"
                         >
                           Tolak
@@ -444,7 +444,7 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-6">
-              {approvalAction === "SETUJUI" ? (
+              {approvalAction === "DISETUJUI" ? (
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
                   <CheckCircle className="w-6 h-6" />
                 </div>
@@ -455,16 +455,16 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
               )}
               <div>
                 <h3 className="text-xl font-bold text-slate-900">
-                  {approvalAction === "SETUJUI" ? "Setujui Retur" : "Tolak Retur"}
+                  {approvalAction === "DISETUJUI" ? "Setujui Retur" : "Tolak Retur"}
                 </h3>
-                <p className="text-sm text-slate-500">SKU: {approvalTarget.sku}</p>
+                <p className="text-sm text-slate-500">SKU: {approvalTarget.salesTransaction?.sku}</p>
               </div>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-3 text-sm">
               <div>
                 <span className="block text-slate-500 text-xs mb-1">Barang</span>
-                <span className="font-medium text-slate-900">{approvalTarget.item?.title || "-"}</span>
+                <span className="font-medium text-slate-900">{approvalTarget.auctionItem?.title || "-"}</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -481,13 +481,13 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
                 </div>
                 <div>
                   <span className="block text-slate-500 text-xs mb-1">Kasir</span>
-                  <span className="font-medium text-slate-900">{approvalTarget.cashierName}</span>
+                  <span className="font-medium text-slate-900">{approvalTarget.salesTransaction?.cashierName}</span>
                 </div>
               </div>
-              {approvalTarget.reasonDetail && (
+              {approvalTarget.reasonNote && (
                 <div>
                   <span className="block text-slate-500 text-xs mb-1">Detail Alasan Kasir</span>
-                  <p className="text-slate-800 bg-white p-2 rounded border border-slate-200 mt-1">{approvalTarget.reasonDetail}</p>
+                  <p className="text-slate-800 bg-white p-2 rounded border border-slate-200 mt-1">{approvalTarget.reasonNote}</p>
                 </div>
               )}
             </div>
@@ -495,13 +495,13 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Catatan {approvalAction === "SETUJUI" ? "Persetujuan" : "Penolakan"} <span className="text-rose-500">*</span>
+                  Catatan {approvalAction === "DISETUJUI" ? "Persetujuan" : "Penolakan"} <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   value={approvalNote}
                   onChange={(e) => setApprovalNote(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 min-h-[100px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all text-sm resize-none"
-                  placeholder={`Masukkan alasan kenapa retur ini ${approvalAction === "SETUJUI" ? "disetujui" : "ditolak"}...`}
+                  placeholder={`Masukkan alasan kenapa retur ini ${approvalAction === "DISETUJUI" ? "disetujui" : "ditolak"}...`}
                   required
                 />
                 {approvalError && <p className="text-rose-500 text-xs mt-1.5">{approvalError}</p>}
@@ -521,12 +521,12 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
                   onClick={handleApproveReject}
                   disabled={isSubmittingApproval}
                   className={`flex-1 px-4 py-2.5 rounded-xl text-white font-medium transition-colors text-sm ${
-                    approvalAction === "SETUJUI" 
+                    approvalAction === "DISETUJUI" 
                       ? "bg-emerald-600 hover:bg-emerald-700" 
                       : "bg-rose-600 hover:bg-rose-700"
                   } disabled:opacity-50`}
                 >
-                  {isSubmittingApproval ? "Memproses..." : approvalAction === "SETUJUI" ? "Setujui Retur" : "Tolak Retur"}
+                  {isSubmittingApproval ? "Memproses..." : approvalAction === "DISETUJUI" ? "Setujui Retur" : "Tolak Retur"}
                 </button>
               </div>
             </div>
