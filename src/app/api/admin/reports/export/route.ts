@@ -212,7 +212,7 @@ export async function GET(request: Request) {
 
       const newRow = worksheet.addRow({
         id: `TX-${String(tx.id).padStart(5, "0")}`,
-        waktu: new Date(tx.transactionDate).toLocaleString("id-ID"),
+        waktu: new Date(tx.transactionDate).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
         sku: tx.sku,
         namaBarang: tx.item?.title || "Item Terhapus",
         kategori: tx.item?.category || "Lainnya",
@@ -286,7 +286,7 @@ export async function GET(request: Request) {
     const buffer = await workbook.xlsx.writeBuffer();
 
     const sanitizedBranch = exportBranchName.replace(/\s+/g, "_");
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = new Date().toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }).replace(/\//g, "-");
 
     return new NextResponse(buffer, {
       status: 200,
