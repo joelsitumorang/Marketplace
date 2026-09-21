@@ -694,7 +694,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                             placeholder="0"
                             value={splitCash}
                             onChange={(e) => setSplitCash(e.target.value.replace(/\D/g, ""))}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-brand-500"
+                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-brand-500"
                           />
                         </div>
                         <div>
@@ -704,7 +704,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                             placeholder="0"
                             value={splitTransfer}
                             onChange={(e) => setSplitTransfer(e.target.value.replace(/\D/g, ""))}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-brand-500"
+                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-brand-500"
                           />
                         </div>
                         <div className="col-span-2 text-[10px] font-bold text-slate-500 text-right">
@@ -734,7 +734,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                           placeholder="0"
                           value={dpAmount}
                           onChange={(e) => setDpAmount(e.target.value.replace(/\D/g, ""))}
-                          className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:border-brand-500"
+                          className="w-full mt-1 bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:border-brand-500"
                         />
                       </div>
                     )}
