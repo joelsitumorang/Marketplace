@@ -91,6 +91,7 @@ export async function GET(request: Request) {
       orderBy: { transactionDate: "desc" },
       include: {
         item: { select: { title: true, category: true, hargaMasuk: true } },
+        installments: true,
       },
     });
 
@@ -162,6 +163,8 @@ export async function GET(request: Request) {
         { key: "hargaTerjual", width: 20 },
         { key: "pendapatanBersih", width: 20 },
         { key: "statusTransaksi", width: 18 },
+        { key: "terbayar", width: 20 },
+        { key: "sisaTagihan", width: 20 },
         { key: "alasanRetur", width: 30 },
       ];
       headerRowValues = [
@@ -176,6 +179,8 @@ export async function GET(request: Request) {
         "Harga Terjual",
         "Pendapatan Bersih",
         "Status Transaksi",
+        "Total Terbayar",
+        "Sisa Tagihan",
         "Alasan Retur"
       ];
     }
@@ -210,6 +215,11 @@ export async function GET(request: Request) {
       const sold = Number(tx.soldPrice);
       const profit = tx.isReturned ? 0 : (sold - cost);
 
+      const basePaid = (Number(tx.amountCash) || 0) + (Number(tx.amountTransfer) || 0);
+      const installmentPaid = tx.installments ? tx.installments.reduce((sum, inst) => sum + Number(inst.amount), 0) : 0;
+      const totalPaid = tx.isReturned ? 0 : (basePaid + installmentPaid);
+      const remaining = tx.isReturned ? 0 : (sold - totalPaid);
+
       const newRow = worksheet.addRow({
         id: `TX-${String(tx.id).padStart(5, "0")}`,
         waktu: new Date(tx.transactionDate).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
@@ -221,7 +231,9 @@ export async function GET(request: Request) {
         hargaMasuk: cost,
         hargaTerjual: sold,
         pendapatanBersih: profit,
-        statusTransaksi: tx.isReturned ? "RETUR" : "SUKSES",
+        statusTransaksi: tx.isReturned ? "RETUR" : tx.status,
+        terbayar: totalPaid,
+        sisaTagihan: Math.max(0, remaining),
         alasanRetur: tx.isReturned ? (tx.returnReason || "Tidak ada alasan") : "-",
       });
 
@@ -250,11 +262,22 @@ export async function GET(request: Request) {
     worksheet.getColumn("hargaMasuk").numFmt = '#,##0';
     worksheet.getColumn("hargaTerjual").numFmt = '#,##0';
     worksheet.getColumn("pendapatanBersih").numFmt = '#,##0';
+    if (statusParam !== "RETUR") {
+      worksheet.getColumn("terbayar").numFmt = '#,##0';
+      worksheet.getColumn("sisaTagihan").numFmt = '#,##0';
+    }
 
     // Calculate sums
     const totalOmset = transactions.reduce((sum, tx) => sum + (tx.isReturned ? 0 : Number(tx.soldPrice)), 0);
     const totalHargaMasuk = transactions.reduce((sum, tx) => sum + (tx.isReturned ? 0 : (tx.item?.hargaMasuk ? Number(tx.item.hargaMasuk) : 0)), 0);
     const totalRevenue = totalOmset - totalHargaMasuk; // Pendapatan Bersih
+    const totalTerbayar = transactions.reduce((sum, tx) => {
+      if (tx.isReturned) return sum;
+      const base = (Number(tx.amountCash) || 0) + (Number(tx.amountTransfer) || 0);
+      const inst = tx.installments ? tx.installments.reduce((s, i) => s + Number(i.amount), 0) : 0;
+      return sum + base + inst;
+    }, 0);
+    const totalSisa = Math.max(0, totalOmset - totalTerbayar);
 
     // Append a dedicated Summary Row at the bottom
     const summaryRow = worksheet.addRow({
@@ -262,6 +285,7 @@ export async function GET(request: Request) {
       hargaMasuk: totalHargaMasuk,
       hargaTerjual: totalOmset,
       pendapatanBersih: totalRevenue,
+      ...(statusParam !== "RETUR" ? { terbayar: totalTerbayar, sisaTagihan: totalSisa } : {})
     });
 
     summaryRow.height = 22;
@@ -274,6 +298,12 @@ export async function GET(request: Request) {
     summaryRow.getCell("hargaTerjual").numFmt = '#,##0';
     summaryRow.getCell("pendapatanBersih").font = { bold: true };
     summaryRow.getCell("pendapatanBersih").numFmt = '#,##0';
+    if (statusParam !== "RETUR") {
+      summaryRow.getCell("terbayar").font = { bold: true };
+      summaryRow.getCell("terbayar").numFmt = '#,##0';
+      summaryRow.getCell("sisaTagihan").font = { bold: true };
+      summaryRow.getCell("sisaTagihan").numFmt = '#,##0';
+    }
 
     summaryRow.eachCell((cell) => {
       cell.border = {
