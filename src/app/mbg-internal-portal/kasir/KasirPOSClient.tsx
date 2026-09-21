@@ -692,7 +692,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                           <input
                             type="text"
                             placeholder="0"
-                            value={splitCash}
+                            value={splitCash ? Number(splitCash).toLocaleString('id-ID') : ""}
                             onChange={(e) => setSplitCash(e.target.value.replace(/\D/g, ""))}
                             className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-brand-500"
                           />
@@ -702,7 +702,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                           <input
                             type="text"
                             placeholder="0"
-                            value={splitTransfer}
+                            value={splitTransfer ? Number(splitTransfer).toLocaleString('id-ID') : ""}
                             onChange={(e) => setSplitTransfer(e.target.value.replace(/\D/g, ""))}
                             className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-brand-500"
                           />
@@ -729,11 +729,11 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                     {isDP && (
                       <div className="pt-2 border-t border-slate-100">
                         <label className="text-[10px] font-bold text-slate-500">Nominal Dibayarkan (Rp)</label>
-                        <input
-                          type="text"
-                          placeholder="0"
-                          value={dpAmount}
-                          onChange={(e) => setDpAmount(e.target.value.replace(/\D/g, ""))}
+                          <input
+                            type="text"
+                            placeholder="0"
+                            value={dpAmount ? Number(dpAmount).toLocaleString('id-ID') : ""}
+                            onChange={(e) => setDpAmount(e.target.value.replace(/\D/g, ""))}
                           className="w-full mt-1 bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:border-brand-500"
                         />
                       </div>
