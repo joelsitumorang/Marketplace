@@ -63,7 +63,7 @@ export default async function AdminItemsPage({ searchParams }: Props) {
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Manajemen Barang</h1>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <a
-            href="/api/admin/items/export"
+            href="/lelang/api/admin/items/export"
             download
             className="flex flex-1 sm:flex-none justify-center items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors text-sm font-semibold shadow-sm whitespace-nowrap active:scale-95"
           >

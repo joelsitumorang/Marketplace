@@ -55,7 +55,7 @@ export default function RootLayout({
                 // Register Service Worker for PWA
                 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
                   window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    navigator.serviceWorker.register('/lelang/sw.js').then(function(reg) {
                       console.log('SW registered successfully:', reg.scope);
                     }).catch(function(err) {
                       console.log('SW registration failed:', err);

@@ -241,8 +241,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
     }
 
     setLoading(true);
-    toast.error("");
-    toast.success("");
+    toast.dismiss();
 
     try {
       const res = await fetch(`/api/kasir/scan?sku=${encodeURIComponent(sku)}`);
@@ -265,8 +264,7 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
         setCartItems((prev) => [...prev, newItem]);
         playBeep(true);
         toast.success(`✓ ${newItem.title} ditambahkan ke keranjang`);
-        setTimeout(() => toast.success(""), 3000);
-      } else {
+        } else {
         toast.error(data.message || "Barang tidak ditemukan.");
         playBeep(false);
       }
