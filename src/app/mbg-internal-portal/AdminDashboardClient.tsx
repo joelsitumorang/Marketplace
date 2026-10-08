@@ -147,6 +147,110 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
 
   return (
     <div className="space-y-6 pb-12 relative">
+      
+      {/* Fase 1: Mobile-First Header Background & Floating Profile */}
+      <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-br from-brand-600 to-red-500 -z-10 -mx-4 md:-mx-8 -mt-4 md:-mt-8 rounded-b-3xl"></div>
+      
+      <div className="bg-white rounded-xl shadow-md border border-slate-100 p-4 mx-2 sm:mx-0 mt-4 md:mt-2 flex items-center gap-4">
+        <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200">
+           <Package className="w-7 h-7 text-slate-400" />
+        </div>
+        <div className="flex-1">
+           <h2 className="text-lg md:text-xl font-bold text-slate-900 leading-tight">Admin Pusat MBG</h2>
+           <p className="text-xs text-slate-500 mt-0.5">Portal Manajemen Cabang</p>
+        </div>
+        <a href="/lelang" target="_blank" className="px-3 py-1.5 border-2 border-brand-500 text-brand-600 text-xs font-bold rounded-full hover:bg-brand-50 transition-colors whitespace-nowrap">
+          Kunjungi Toko
+        </a>
+      </div>
+
+      {/* Fase 2: Actionable Status Pesanan (4 Columns Shopee-Style) */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mx-2 sm:mx-0 flex justify-between text-center mt-2 mb-4">
+        <div className="flex flex-col items-center flex-1">
+           <span className="text-xl md:text-2xl font-bold text-slate-800">{data.totalActive}</span>
+           <span className="text-[10px] md:text-xs text-slate-500 leading-tight mt-1">Stok<br/>Tersedia</span>
+        </div>
+        <div className="w-px bg-slate-100"></div>
+        <div className="flex flex-col items-center flex-1">
+           <span className="text-xl md:text-2xl font-bold text-slate-800">{data.pendingApprovalCount || 0}</span>
+           <span className="text-[10px] md:text-xs text-slate-500 leading-tight mt-1">Perlu<br/>Persetujuan</span>
+        </div>
+        <div className="w-px bg-slate-100"></div>
+        <div className="flex flex-col items-center flex-1">
+           <span className="text-xl md:text-2xl font-bold text-slate-800">{data.totalReturCount}</span>
+           <span className="text-[10px] md:text-xs text-slate-500 leading-tight mt-1">Retur<br/>Bulan Ini</span>
+        </div>
+        <div className="w-px bg-slate-100"></div>
+        <div className="flex flex-col items-center flex-1">
+           <span className="text-xl md:text-2xl font-bold text-slate-800">{data.totalSold}</span>
+           <span className="text-[10px] md:text-xs text-slate-500 leading-tight mt-1">Pesanan<br/>Selesai</span>
+        </div>
+      </div>
+
+      {/* Fase 3: Menu Navigasi Grid (Icon Horizontal) */}
+      <div className="mx-2 sm:mx-0 overflow-x-auto hide-scrollbar mb-6">
+        <div className="flex gap-4 md:grid md:grid-cols-5 min-w-max md:min-w-0 pb-2">
+          
+          <a href="/mbg-internal-portal/kasir" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+            <div className="w-12 h-12 bg-orange-100 text-brand-600 rounded-xl flex items-center justify-center shrink-0">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Kasir<br/>POS</span>
+          </a>
+
+          <a href="/mbg-internal-portal/items" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+              <Package className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Produk</span>
+          </a>
+
+          <a href="/mbg-internal-portal/retur" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center shrink-0">
+              <RotateCcw className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Retur</span>
+          </a>
+
+          <a href="/mbg-internal-portal/reports" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+            <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Laporan</span>
+          </a>
+
+          <a href="/mbg-internal-portal/settings" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+            <div className="w-12 h-12 bg-slate-200 text-slate-700 rounded-xl flex items-center justify-center shrink-0">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Pengaturan</span>
+          </a>
+
+        </div>
+        <div className="w-8 h-1 bg-slate-200 rounded-full mx-auto mt-2 md:hidden"></div>
+      </div>
+
+      {/* Fase 4: Pengumuman / Banner Bawah */}
+      <div className="mx-2 sm:mx-0 mb-6">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-sm font-bold text-slate-800">Pengumuman Internal</h3>
+          <span className="text-xs text-brand-600 font-semibold cursor-pointer">Lainnya {'>'}</span>
+        </div>
+        <div className="bg-brand-600 rounded-xl p-4 text-white relative overflow-hidden flex items-center justify-between shadow-sm">
+          <div className="z-10">
+            <h4 className="font-bold text-sm mb-1">SOP Penerimaan Retur 2026</h4>
+            <p className="text-xs opacity-90 max-w-[200px] mb-3">Pastikan barang difoto sebelum diproses ke gudang pusat.</p>
+            <button className="bg-white text-brand-600 text-[10px] font-black px-3 py-1.5 rounded uppercase tracking-wider hover:bg-brand-50 transition-colors">CEK SELENGKAPNYA</button>
+          </div>
+          <div className="absolute right-[-20px] top-[-20px] opacity-20">
+            <Package className="w-32 h-32" />
+          </div>
+        </div>
+      </div>
+
       {/* Date Range Picker Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 text-slate-700 font-semibold text-sm">
