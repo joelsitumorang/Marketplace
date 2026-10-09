@@ -67,11 +67,13 @@ type Props = {
   initialData: AnalyticsData;
   initialStartDate: string;
   initialEndDate: string;
+  userName?: string;
+  userBranch?: string;
 };
 
 const PIE_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#3b82f6", "#06b6d4"];
 
-export default function AdminDashboardClient({ initialData, initialStartDate, initialEndDate }: Props) {
+export default function AdminDashboardClient({ initialData, initialStartDate, initialEndDate, userName, userBranch }: Props) {
   const [data, setData] = useState<AnalyticsData>(initialData);
   const [loading, setLoading] = useState(false);
 
@@ -150,15 +152,21 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
     <div className="space-y-6 pb-12 relative">
       
       {/* Fase 1: Mobile-First Header Background & Floating Profile */}
-      <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-br from-brand-600 to-red-500 -z-10 -mx-4 md:-mx-8 -mt-4 md:-mt-8 rounded-b-3xl"></div>
+      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-br from-brand-600 to-red-500 -z-10 -mx-4 md:-mx-8 -mt-4 md:-mt-8 rounded-b-3xl"></div>
       
-      <div className="bg-white rounded-xl shadow-md border border-slate-100 p-4 mx-2 sm:mx-0 mt-4 md:mt-2 flex items-center gap-4">
+      {/* Welcome Message (Glassmorphism) */}
+      <div className="mx-2 sm:mx-0 mt-2 mb-4 p-4 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-sm text-white">
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight">Selamat Datang, {userName || "Admin"}! 👋</h1>
+        <p className="text-sm text-white/90 mt-0.5 font-medium">Ringkasan performa katalog dan penjualan cabangmu.</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-md border border-slate-100 p-4 mx-2 sm:mx-0 mt-2 flex items-center gap-4">
         <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200">
            <Package className="w-7 h-7 text-slate-400" />
         </div>
         <div className="flex-1">
-           <h2 className="text-lg md:text-xl font-bold text-slate-900 leading-tight">Admin Pusat MBG</h2>
-           <p className="text-xs text-slate-500 mt-0.5">Portal Manajemen Cabang</p>
+           <h2 className="text-lg md:text-xl font-bold text-slate-900 leading-tight">Cabang {userBranch || "Pusat MBG"}</h2>
+           <p className="text-xs text-slate-500 mt-0.5">Portal Manajemen Toko</p>
         </div>
         <a href="/lelang" target="_blank" className="px-3 py-1.5 border-2 border-brand-500 text-brand-600 text-xs font-bold rounded-full hover:bg-brand-50 transition-colors whitespace-nowrap">
           Kunjungi Toko

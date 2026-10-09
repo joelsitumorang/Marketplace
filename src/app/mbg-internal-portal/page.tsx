@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import AdminDashboardClient from "./AdminDashboardClient";
 
+import { getSession } from "@/lib/session";
+
 const getWibDateKey = (date: Date): string => {
   const wibTime = date.getTime() + (7 * 60 * 60 * 1000);
   const wibDate = new Date(wibTime);
@@ -47,6 +49,7 @@ function AdminDashboardSkeleton() {
 }
 
 async function DashboardData() {
+  const session = await getSession();
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -225,18 +228,15 @@ async function DashboardData() {
       initialData={initialData}
       initialStartDate="null"
       initialEndDate="null"
+      userName={session?.nama_lengkap || "Admin"}
+      userBranch={session?.asal_cabang || "Pusat"}
     />
   );
 }
 
 export default function AdminDashboard() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard Analytics</h1>
-        <p className="text-slate-500 mt-1">Ringkasan performa katalog dan penjualan.</p>
-      </div>
-
+    <div className="w-full">
       <Suspense fallback={<AdminDashboardSkeleton />}>
         <DashboardData />
       </Suspense>
