@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import { Package, TrendingUp, DollarSign, Loader2, Calendar, RotateCcw } from "lucide-react";
 import DateRangePicker, { DateRange } from "@/components/DateRangePicker";
+import Link from "next/link";
 
 const toLocalIsoDateString = (date: Date | null): string => {
   if (!date) return "";
@@ -191,35 +192,35 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
       <div className="mx-2 sm:mx-0 overflow-x-auto hide-scrollbar mb-6">
         <div className="flex gap-4 md:grid md:grid-cols-5 min-w-max md:min-w-0 pb-2">
           
-          <a href="/mbg-internal-portal/kasir" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+          <Link href="/mbg-internal-portal/kasir" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
             <div className="w-12 h-12 bg-orange-100 text-brand-600 rounded-xl flex items-center justify-center shrink-0">
               <DollarSign className="w-6 h-6" />
             </div>
             <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Kasir<br/>POS</span>
-          </a>
+          </Link>
 
-          <a href="/mbg-internal-portal/items" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+          <Link href="/mbg-internal-portal/items" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
             <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
               <Package className="w-6 h-6" />
             </div>
             <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Produk</span>
-          </a>
+          </Link>
 
-          <a href="/mbg-internal-portal/retur" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+          <Link href="/mbg-internal-portal/retur" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
             <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center shrink-0">
               <RotateCcw className="w-6 h-6" />
             </div>
             <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Retur</span>
-          </a>
+          </Link>
 
-          <a href="/mbg-internal-portal/reports" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+          <Link href="/mbg-internal-portal/reports" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
             <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
               <TrendingUp className="w-6 h-6" />
             </div>
             <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Laporan</span>
-          </a>
+          </Link>
 
-          <a href="/mbg-internal-portal/settings" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
+          <Link href="/mbg-internal-portal/settings" className="flex flex-col items-center gap-2 w-16 md:w-auto hover:opacity-80 transition-opacity">
             <div className="w-12 h-12 bg-slate-200 text-slate-700 rounded-xl flex items-center justify-center shrink-0">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -227,7 +228,7 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
               </svg>
             </div>
             <span className="text-[10px] md:text-xs font-semibold text-slate-700 text-center leading-tight">Pengaturan</span>
-          </a>
+          </Link>
 
         </div>
         <div className="w-8 h-1 bg-slate-200 rounded-full mx-auto mt-2 md:hidden"></div>
