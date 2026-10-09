@@ -7,7 +7,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "MBG Admin",
-  manifest: "/manifest-admin.webmanifest",
+  manifest: "/lelang/manifest-admin.webmanifest",
   themeColor: "#0284c7",
   appleWebApp: {
     capable: true,

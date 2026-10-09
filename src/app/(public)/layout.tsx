@@ -4,7 +4,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "MBG Katalog Lelang",
-  manifest: "/manifest-lelang.webmanifest",
+  manifest: "/lelang/manifest-lelang.webmanifest",
   themeColor: "#ea580c",
   appleWebApp: {
     capable: true,

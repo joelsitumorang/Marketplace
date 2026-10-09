@@ -7,6 +7,6 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Pass-through fetch for standard PWA requirement
-  event.respondWith(fetch(event.request));
+  // Empty listener to satisfy PWA installability requirement
+  // without intercepting and breaking actual network requests
 });
