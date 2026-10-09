@@ -11,8 +11,18 @@ import {
   Filter,
   CheckCircle,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Calendar
 } from "lucide-react";
+import DateRangePicker, { DateRange } from "@/components/DateRangePicker";
+
+const toLocalIsoDateString = (date: Date | null): string => {
+  if (!date) return "";
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
 
 const RETURN_REASON_LABELS: Record<string, string> = {
   TIDAK_SESUAI_DESKRIPSI: "Tidak Sesuai Deskripsi",
@@ -50,8 +60,7 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
   // Filters
   const [statusFilter, setStatusFilter] = useState("SEMUA");
   const [reasonFilter, setReasonFilter] = useState("SEMUA");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   
   // Pagination
   const [page, setPage] = useState(1);
@@ -80,8 +89,10 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
       if (reasonFilter !== "SEMUA") {
         queryParams += `&reason=${reasonFilter}`;
       }
-      if (startDate) queryParams += `&startDate=${startDate}`;
-      if (endDate) queryParams += `&endDate=${endDate}`;
+      const startDateStr = toLocalIsoDateString(dateRange.from);
+      const endDateStr = toLocalIsoDateString(dateRange.to);
+      if (startDateStr) queryParams += `&startDate=${startDateStr}`;
+      if (endDateStr) queryParams += `&endDate=${endDateStr}`;
 
       const res = await fetch(`/api/admin/retur${queryParams}`);
       const data = await res.json();
@@ -95,7 +106,7 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
     } finally {
       setLoading(false);
     }
-  }, [page, activeTab, statusFilter, reasonFilter, startDate, endDate]);
+  }, [page, activeTab, statusFilter, reasonFilter, dateRange]);
 
   const fetchPendingCount = useCallback(async () => {
     if (!isSuperAdmin) return;
@@ -257,23 +268,14 @@ export default function ReturListClient({ isSuperAdmin, userBranch }: ReturListC
               ))}
             </select>
 
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
-              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-sm"
-            />
-            
-            <div className="flex gap-2">
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
-                className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-sm"
-              />
+            <div className="flex items-center gap-2 w-full lg:col-span-2">
+              <div className="bg-white rounded-xl border border-slate-300 w-full flex-1">
+                <DateRangePicker value={dateRange} onChange={(newRange) => { setDateRange(newRange); setPage(1); }} />
+              </div>
+              
               <button
                 onClick={() => fetchReturns()}
-                className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors border border-slate-300"
+                className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors border border-slate-300 shrink-0 h-[42px] w-[42px] flex items-center justify-center"
                 title="Refresh"
               >
                 <RefreshCcw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
