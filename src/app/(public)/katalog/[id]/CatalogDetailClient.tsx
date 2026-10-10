@@ -6,6 +6,7 @@ import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { buildShareText } from "@/lib/share";
 
 type VariantItem = {
   id: number;
@@ -60,19 +61,25 @@ export default function CatalogDetailClient({ initialItem, variants }: Props) {
   }, [selectedItem]);
 
   const handleShare = async () => {
+    const shareText = buildShareText(
+      { name: selectedItem.title, price: selectedItem.price },
+      window.location.href
+    );
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: selectedItem.title,
-          text: `Cek barang ini di MBG: ${selectedItem.title}`,
-          url: window.location.href,
+          text: shareText,
         });
       } catch (e) {
-        console.error("Share failed", e);
+        if ((e as Error).name !== "AbortError") {
+          console.error("Share failed", e);
+        }
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link berhasil disalin!");
+      await navigator.clipboard.writeText(shareText);
+      toast.success("Teks & link berhasil disalin!");
     }
   };
 
