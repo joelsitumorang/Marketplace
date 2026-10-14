@@ -46,7 +46,7 @@ export default function SearchBar() {
       </div>
       <input
         type="text"
-        placeholder="Cari barang lelang..."
+        placeholder="Cari barang..."
         value={searchVal}
         onChange={handleSearchChange}
         className="w-full pl-14 pr-6 py-4 text-base sm:text-lg text-slate-900 placeholder-slate-400 bg-white border border-slate-200/50 rounded-2xl shadow-md focus:shadow-lg focus:ring-4 focus:ring-blue-500/10 focus:outline-none text-left transition-all font-medium"

@@ -48,13 +48,13 @@ export async function generateMetadata(
     absoluteImageUrl = `${baseUrl}/logo.png`;
   }
 
-  const plainDescription = item.description ? item.description.replace(/<[^>]+>/g, '').substring(0, 160) : `Penawaran spesial ${item.title} di MBG Lelang.`;
+  const plainDescription = item.description ? item.description.replace(/<[^>]+>/g, '').substring(0, 160) : `Pilihan produk ${item.title} di Katalog MBG.`;
 
   return {
-    title: `${item.title} | MBG Lelang`,
+    title: `${item.title} | Katalog MBG`,
     description: plainDescription,
     openGraph: {
-      title: `${item.title} | MBG Lelang`,
+      title: `${item.title} | Katalog MBG`,
       description: plainDescription,
       images: [
         {
@@ -69,7 +69,7 @@ export async function generateMetadata(
     },
     twitter: {
       card: "summary_large_image",
-      title: `${item.title} | MBG Lelang`,
+      title: `${item.title} | Katalog MBG`,
       description: plainDescription,
       images: [absoluteImageUrl],
     },

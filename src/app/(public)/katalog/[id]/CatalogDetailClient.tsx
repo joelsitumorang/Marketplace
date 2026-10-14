@@ -119,7 +119,7 @@ export default function CatalogDetailClient({ initialItem, variants }: Props) {
           {/* Details */}
           <div className="px-5 sm:px-0 py-6 sm:py-2">
             <div className="mb-5">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className={`px-2 py-1 text-[10px] uppercase font-black tracking-widest rounded border ${
                     selectedItem.kondisi === "Baru" ? "border-green-500/50 text-green-500 bg-green-500/10" :
                     "border-slate-500/50 text-slate-400 bg-slate-500/10"
@@ -127,6 +127,9 @@ export default function CatalogDetailClient({ initialItem, variants }: Props) {
                   {selectedItem.kondisi}
                 </span>
                 <span className="text-[11px] text-slate-400 font-mono">SKU: {selectedItem.sku}</span>
+                <span className="text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md font-medium border border-slate-200/80">
+                  Dari gadai tidak tertebus
+                </span>
               </div>
               
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2 leading-snug">

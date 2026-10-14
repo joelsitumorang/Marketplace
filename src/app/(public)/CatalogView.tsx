@@ -11,6 +11,7 @@ import { loadMoreCatalogItems } from "./_lib/actions";
 import { SearchIsland } from "@/components/lelang/SearchIsland";
 import { CategoryChips } from "@/components/lelang/CategoryChips";
 import { ResultBar } from "@/components/lelang/ResultBar";
+import HowToShop from "@/components/lelang/HowToShop";
 
 interface CatalogViewProps {
   initialItems: CatalogItemSummary[];
@@ -82,17 +83,21 @@ export default function CatalogView({
 
       {/* Header title & description */}
       <div className="pt-8 sm:pt-10 pb-3 px-4 sm:px-6 lg:px-8 text-center sm:text-left text-white max-w-7xl mx-auto relative z-10">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-2">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-1.5">
           Katalog <span className="text-blue-300">MBG</span>
         </h1>
-        <p className="text-xs sm:text-sm md:text-base text-blue-100 max-w-2xl font-medium leading-relaxed">
-          Temukan barang preloved & lelang terbaik dari seluruh cabang kami.
+        <p className="text-[15px] sm:text-base font-semibold text-white tracking-wide">
+          Cek, Pilih, Bawa Pulang.
+        </p>
+        <p className="text-[13px] text-white/80 font-normal leading-relaxed mt-0.5">
+          Barang pilihan dari gadai tidak tertebus.
         </p>
       </div>
 
       {/* Main Catalog Content Container (Sticky SearchIsland, CategoryChips, ResultBar, & Products in single tall container) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3 relative z-20 pb-16">
         <SearchIsland initialParams={params} availableBranches={branches} />
+        <HowToShop />
         <CategoryChips categories={categories} activeCategory={params.category} />
         <ResultBar total={totalCount} params={params} />
 

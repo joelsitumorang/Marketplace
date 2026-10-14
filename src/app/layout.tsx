@@ -9,22 +9,23 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PT MBG - Katalog Barang Lelang & Bekas",
+  title: "Katalog MBG – Barang Preloved & Second | PT MBG Pasuruan",
   description:
-    "Platform katalog online barang bekas dan lelang PT MBG. Lihat koleksi barang berkualitas dari berbagai cabang — beli langsung di toko terdekat.",
+    "Katalog barang preloved dan second pilihan dari gadai tidak tertebus PT MBG Cabang Pasuruan. Cek, pilih, bawa pulang. Chat langsung via WhatsApp.",
   keywords: [
     "barang bekas",
-    "lelang",
+    "preloved",
+    "second",
     "pawnshop",
     "gadai",
     "PT MBG",
     "katalog online",
-    "barang preloved",
+    "Katalog MBG",
   ],
   openGraph: {
-    title: "PT MBG - Katalog Barang Lelang & Bekas",
+    title: "Katalog MBG – Barang Preloved & Second | PT MBG Pasuruan",
     description:
-      "Temukan barang bekas berkualitas dengan harga terjangkau. Lihat online, beli di toko.",
+      "Katalog barang preloved dan second pilihan dari gadai tidak tertebus PT MBG Cabang Pasuruan. Cek, pilih, bawa pulang. Chat langsung via WhatsApp.",
     type: "website",
   },
 };

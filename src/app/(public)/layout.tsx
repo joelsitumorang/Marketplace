@@ -3,12 +3,12 @@ import Footer from "@/components/Footer";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "MBG Katalog Lelang",
+  title: "Katalog MBG",
   manifest: "/lelang/manifest-lelang.webmanifest",
   themeColor: "#ea580c",
   appleWebApp: {
     capable: true,
-    title: "MBG Lelang",
+    title: "Katalog MBG",
     statusBarStyle: "default",
   },
   icons: {

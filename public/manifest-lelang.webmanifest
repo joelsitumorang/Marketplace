@@ -1,7 +1,7 @@
 {
-  "name": "MBG Katalog Lelang",
-  "short_name": "MBG Lelang",
-  "description": "Katalog Lelang PT MBG",
+  "name": "Katalog MBG",
+  "short_name": "Katalog MBG",
+  "description": "Katalog barang preloved dan second pilihan dari gadai tidak tertebus PT MBG.",
   "start_url": "/lelang/",
   "scope": "/lelang/",
   "display": "standalone",
