@@ -89,31 +89,50 @@ export function SearchIsland({ initialParams, availableBranches = [] }: SearchIs
     }
   };
 
-  // Dynamically calculate and set --stick based on actual DOM position & safe area insets
-  useEffect(() => {
-    const updateStickAndCollapsed = () => {
-      if (wrapRef.current) {
-        const rect = wrapRef.current.getBoundingClientRect();
-        const scrollTop = window.scrollY || document.documentElement.scrollTop;
-        const topOffset = rect.top + scrollTop;
-        const computedTop = parseFloat(window.getComputedStyle(wrapRef.current).top) || 16;
-        const stick = Math.max(0, Math.round(topOffset - computedTop));
-        document.documentElement.style.setProperty("--stick", `${stick}px`);
+  const initialStickRef = useRef<number>(90);
 
-        // Check if currently scrolled past the shrink threshold
-        setIsCollapsed(scrollTop >= stick + 60);
+  // Calculate --stick distance from DOM once at page top, and track scroll for collapse state
+  useEffect(() => {
+    const calculateInitialStick = () => {
+      if (wrapRef.current) {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        if (scrollTop < 20) {
+          const rect = wrapRef.current.getBoundingClientRect();
+          const topOffset = rect.top + scrollTop;
+          const computedTop = parseFloat(window.getComputedStyle(wrapRef.current).top) || 16;
+          const stick = Math.max(0, Math.round(topOffset - computedTop));
+          initialStickRef.current = stick;
+          document.documentElement.style.setProperty("--stick", `${stick}px`);
+        }
       }
     };
 
-    updateStickAndCollapsed();
-    window.addEventListener("scroll", updateStickAndCollapsed, { passive: true });
-    window.addEventListener("resize", updateStickAndCollapsed, { passive: true });
-    window.addEventListener("orientationchange", updateStickAndCollapsed, { passive: true });
+    calculateInitialStick();
+    window.addEventListener("resize", calculateInitialStick);
+    window.addEventListener("orientationchange", calculateInitialStick);
+
+    // High performance scroll listener with requestAnimationFrame (smooth on iOS Safari & Android)
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollTop = window.scrollY || document.documentElement.scrollTop;
+          const threshold = initialStickRef.current + 40;
+          const collapsed = scrollTop >= threshold;
+          setIsCollapsed((prev) => (prev !== collapsed ? collapsed : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
 
     return () => {
-      window.removeEventListener("scroll", updateStickAndCollapsed);
-      window.removeEventListener("resize", updateStickAndCollapsed);
-      window.removeEventListener("orientationchange", updateStickAndCollapsed);
+      window.removeEventListener("resize", calculateInitialStick);
+      window.removeEventListener("orientationchange", calculateInitialStick);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -212,20 +231,20 @@ export function SearchIsland({ initialParams, availableBranches = [] }: SearchIs
 
   return (
     <>
-      {/* Sticky Dynamic Island Wrap (Direct child of full height container) */}
+      {/* Sticky Dynamic Island Wrap */}
       <div
         ref={wrapRef}
-        className="island-wrap px-4 sm:px-6"
+        className="island-wrap"
         data-collapsed={isCollapsed ? "true" : "false"}
         data-expanded={isExpanded ? "true" : "false"}
       >
         <div className="island-pill">
-          {/* Collapsed Search Icon Button (44x44px for direct tap when collapsed) */}
+          {/* Collapsed Search Icon Button / Tap Target */}
           <button
             type="button"
             onClick={handleOpenIsland}
             aria-label="Cari barang"
-            className="w-11 h-11 ml-1.5 rounded-full flex items-center justify-center text-white hover:bg-white/10 active:bg-white/20 transition-colors shrink-0 cursor-pointer"
+            className="w-5 h-5 flex items-center justify-center text-white shrink-0 cursor-pointer p-0 border-0 bg-transparent focus:outline-none"
           >
             <Search className="w-5 h-5" strokeWidth={2} />
           </button>
@@ -236,7 +255,7 @@ export function SearchIsland({ initialParams, availableBranches = [] }: SearchIs
             onClick={handleOpenIsland}
             aria-haspopup="dialog"
             aria-label="Cari barang"
-            className="island-text flex-1 min-w-0 h-full text-left flex items-center px-2 cursor-pointer select-none transition-opacity duration-150 overflow-hidden"
+            className="island-text flex-1 min-w-0 h-full text-left flex items-center px-1 cursor-pointer select-none overflow-hidden focus:outline-none"
           >
             {currentParams.q ? (
               <span className="font-semibold text-white text-[15px] truncate">
@@ -250,14 +269,14 @@ export function SearchIsland({ initialParams, availableBranches = [] }: SearchIs
           </button>
 
           {/* Filter Button Circle (44x44px with badge) */}
-          <div className="relative mr-1.5 shrink-0">
+          <div className="relative shrink-0">
             <button
               type="button"
               onClick={() => setIsFilterOpen(true)}
               aria-label={`Filter katalog${activeFilterCount > 0 ? `, ${activeFilterCount} aktif` : ""}`}
               className="w-11 h-11 rounded-full bg-[#2A2A2C] text-white flex items-center justify-center hover:bg-[#38383B] active:bg-[#444448] transition-colors cursor-pointer"
             >
-              <SlidersHorizontal className="w-4 h-4" strokeWidth={2} />
+              <SlidersHorizontal className="w-5 h-5" strokeWidth={2} />
             </button>
 
             {/* Active Filter Count Badge */}

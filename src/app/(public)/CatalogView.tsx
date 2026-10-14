@@ -90,19 +90,10 @@ export default function CatalogView({
         </p>
       </div>
 
-      {/* Dynamic Island Search Bar - direct child of tall page container for full-page sticky */}
-      <div className="w-full relative z-30 mb-2">
+      {/* Main Catalog Content Container (Sticky SearchIsland, CategoryChips, ResultBar, & Products in single tall container) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3 relative z-20 pb-16">
         <SearchIsland initialParams={params} availableBranches={branches} />
-      </div>
-
-      {/* Category Filter Chips Horizontal Row (Not Sticky, scrolls naturally) */}
-      <div className="relative z-10 mb-2 max-w-7xl mx-auto">
         <CategoryChips categories={categories} activeCategory={params.category} />
-      </div>
-
-      {/* Main Catalog Content Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4 relative z-10 pb-16">
-        {/* Result Bar: Sort dropdown, active filters, count & reset */}
         <ResultBar total={totalCount} params={params} />
 
         {/* Product Grid */}

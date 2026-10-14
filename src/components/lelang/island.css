@@ -1,7 +1,7 @@
 /* Dynamic Island CSS Scroll-Driven Animations & Styling */
 
 :root {
-  --stick: 80px;
+  --stick: 90px;
 }
 
 @keyframes island-shrink {
@@ -36,7 +36,7 @@
 .island-wrap {
   position: -webkit-sticky;
   position: sticky;
-  top: max(14px, calc(env(safe-area-inset-top, 0px) + 10px));
+  top: max(16px, calc(env(safe-area-inset-top, 0px) + 8px));
   z-index: 40;
   display: flex;
   justify-content: center;
@@ -57,38 +57,49 @@
   color: #ffffff;
   display: flex;
   align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 20px;
+  box-sizing: border-box;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
-  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
   will-change: width, box-shadow;
   overflow: hidden;
   position: relative;
 }
 
-/* Fallback CSS saat data-collapsed="true" (untuk browser tanpa animation-timeline atau saat dipicu state) */
-.island-wrap[data-collapsed="true"] .island-pill {
-  width: 112px !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+.island-text {
+  transition: opacity 0.2s ease;
+  will-change: opacity;
 }
 
-.island-wrap[data-collapsed="true"] .island-text {
-  opacity: 0 !important;
-  pointer-events: none !important;
+/* Fallback CSS untuk browser tanpa animation-timeline (Safari iOS, Chrome iOS, dll) */
+@supports not (animation-timeline: scroll()) {
+  .island-wrap[data-collapsed="true"] .island-pill {
+    width: 112px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  }
+
+  .island-wrap[data-collapsed="true"] .island-text {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
 }
 
-/* Scroll-Driven Animations (didukung di Chrome/Edge modern dan Safari terbaru) */
+/* Scroll-Driven Animations untuk browser modern (Chrome Android, Edge, Chromium) */
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
     .island-wrap:not([data-expanded="true"]) .island-pill {
       animation: island-shrink linear both, island-lift linear both;
       animation-timeline: scroll(root), scroll(root);
-      animation-range: var(--stick, 80px) calc(var(--stick, 80px) + 84px),
-                       var(--stick, 80px) calc(var(--stick, 80px) + 84px);
+      animation-range: var(--stick, 90px) calc(var(--stick, 90px) + 84px),
+                       var(--stick, 90px) calc(var(--stick, 90px) + 84px);
     }
 
     .island-wrap:not([data-expanded="true"]) .island-text {
       animation: island-fade linear both;
       animation-timeline: scroll(root);
-      animation-range: var(--stick, 80px) calc(var(--stick, 80px) + 44px);
+      animation-range: var(--stick, 90px) calc(var(--stick, 90px) + 44px);
     }
   }
 }
