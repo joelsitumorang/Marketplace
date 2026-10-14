@@ -1,0 +1,102 @@
+/* Dynamic Island CSS Scroll-Driven Animations & Styling */
+
+@keyframes island-shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 112px;
+  }
+}
+
+@keyframes island-fade {
+  from {
+    opacity: 1;
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes island-lift {
+  from {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  }
+  to {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.island-wrap {
+  position: sticky;
+  top: 16px;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  pointer-events: none;
+}
+
+.island-wrap > * {
+  pointer-events: auto;
+}
+
+.island-pill {
+  width: 100%;
+  max-width: 640px;
+  height: 56px;
+  border-radius: 28px;
+  background-color: #111111;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  will-change: width, box-shadow;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Fallback CSS saat data-collapsed="true" (untuk browser tanpa animation-timeline atau saat dipicu IO) */
+.island-wrap[data-collapsed="true"] .island-pill {
+  width: 112px !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+.island-wrap[data-collapsed="true"] .island-text {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.island-wrap[data-collapsed="true"] .island-collapsed-search-btn {
+  display: flex !important;
+}
+
+/* Scroll-Driven Animations (jika didukung browser modern) */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .island-wrap:not([data-expanded="true"]) .island-pill {
+      animation: island-shrink linear both, island-lift linear both;
+      animation-timeline: scroll(root), scroll(root);
+      animation-range: var(--stick, 140px) calc(var(--stick, 140px) + 84px),
+                       var(--stick, 140px) calc(var(--stick, 140px) + 84px);
+    }
+
+    .island-wrap:not([data-expanded="true"]) .island-text {
+      animation: island-fade linear both;
+      animation-timeline: scroll(root);
+      animation-range: var(--stick, 140px) calc(var(--stick, 140px) + 44px);
+    }
+  }
+}
+
+/* Expanded Island Modal Overlay */
+.island-expanded-container {
+  border-radius: 28px;
+  background-color: #111111;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  outline: 2px solid #32D74B;
+  overflow: hidden;
+}
