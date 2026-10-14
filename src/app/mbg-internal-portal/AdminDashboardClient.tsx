@@ -6,19 +6,18 @@ import {
   Area,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
   Cell,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
-  Legend
+  CartesianGrid
 } from "recharts";
-import { Package, TrendingUp, DollarSign, Loader2, Calendar, RotateCcw } from "lucide-react";
+import { Package, TrendingUp, DollarSign, Loader2, Calendar, RotateCcw, ExternalLink } from "lucide-react";
 import DateRangePicker, { DateRange } from "@/components/DateRangePicker";
 import Link from "next/link";
+import { KategoriBarList } from "./KategoriBarList";
+import { TopViewedList } from "./TopViewedList";
 
 const toLocalIsoDateString = (date: Date | null): string => {
   if (!date) return "";
@@ -70,6 +69,9 @@ type Props = {
   userName?: string;
   userBranch?: string;
 };
+
+const rapikanNamaCabang = (raw: string) =>
+  raw.replace(/\b(cabang|mbg)\b\s*/gi, "").replace(/\s+-\s+/g, " – ").trim();
 
 const PIE_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#3b82f6", "#06b6d4"];
 
@@ -148,14 +150,7 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
     { title: "Retur Bulan Ini", value: `${data.totalReturCount} transaksi`, icon: RotateCcw, color: "text-rose-600", bg: "bg-rose-50", subtitle: formatIDR(data.totalReturAmount) },
   ];
 
-  const cleanBranchName = (() => {
-    if (!userBranch) return "Pusat MBG";
-    const trimmed = userBranch.trim();
-    if (trimmed.toLowerCase().startsWith("cabang") || trimmed.toLowerCase().startsWith("mbg")) {
-      return trimmed;
-    }
-    return `Cabang ${trimmed}`;
-  })();
+  const cleanBranchName = rapikanNamaCabang(userBranch || "") || "Pusat";
 
   return (
     <div className="space-y-6 pb-12 relative">
@@ -172,18 +167,24 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
         <p className="text-xs sm:text-sm text-white/90 mt-0.5 font-medium">Ringkasan performa katalog dan penjualan cabangmu.</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md border border-slate-100 p-3.5 sm:p-4 mx-2 sm:mx-0 mt-2 flex items-center gap-3 sm:gap-4">
-        <div className="w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200">
-           <Package className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400" />
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 mx-2 sm:mx-0 mt-2">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600">
+          MBG · Portal Manajemen Toko
+        </p>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <h2 className="min-w-0 truncate text-xl font-semibold tracking-tight text-slate-900">
+            {cleanBranchName}
+          </h2>
+          <a
+            href="/lelang"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 active:bg-slate-50"
+          >
+            Kunjungi Toko <ExternalLink className="h-3.5 w-3.5" />
+          </a>
         </div>
-        <div className="flex-1 min-w-0">
-           <h2 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 leading-snug break-words">{cleanBranchName}</h2>
-           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">Portal Manajemen Toko</p>
-        </div>
-        <a href="/lelang" target="_blank" className="px-2.5 py-1.5 sm:px-3 sm:py-1.5 border border-brand-500 text-brand-600 text-[11px] sm:text-xs font-bold rounded-full hover:bg-brand-50 transition-colors shrink-0 whitespace-nowrap">
-          Kunjungi Toko
-        </a>
-      </div>
+      </section>
 
       {/* Fase 2: Actionable Status Pesanan (4 Columns Shopee-Style) */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mx-2 sm:mx-0 flex justify-between text-center mt-2 mb-4">
@@ -453,33 +454,8 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
             <h3 className="text-base font-bold text-slate-900">Distribusi Kategori Penjualan</h3>
             <p className="text-xs text-slate-500 mt-0.5">Proporsi item terjual berdasarkan kategori produk.</p>
           </div>
-          <div className="w-full my-4 flex items-center justify-center">
-            {data.categoryData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                    data={data.categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="total"
-                  >
-                    {data.categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px" }}
-                    formatter={(value) => [`${value} item`, "Jumlah"]}
-                  />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" fontSize={11} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="text-slate-400 text-sm h-[260px] flex items-center justify-center">Tidak ada data distribusi kategori.</div>
-            )}
+          <div className="w-full my-4">
+            <KategoriBarList data={data.categoryData.map((c) => ({ name: c.name, value: c.total }))} />
           </div>
         </div>
 
@@ -529,37 +505,9 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
           <h3 className="text-base font-bold text-slate-900">Barang Paling Banyak Dilihat</h3>
           <p className="text-xs text-slate-500 mt-0.5">Top 5 barang yang paling sering dibuka di katalog publik (all time).</p>
         </div>
-        <div className="w-full mt-4 overflow-x-auto">
+        <div className="w-full mt-4">
           {data.topViewedItems && data.topViewedItems.length > 0 ? (
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="text-xs font-semibold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Barang & SKU</th>
-                  <th className="px-4 py-3">Cabang</th>
-                  <th className="px-4 py-3 text-right">View Count</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.topViewedItems.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-900">{item.title}</div>
-                      <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</div>
-                    </td>
-                    <td className="px-4 py-3 text-xs">{item.branchName}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        {item.viewCount} views
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <TopViewedList items={data.topViewedItems} />
           ) : (
             <div className="text-slate-400 text-sm h-32 flex items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
               Belum ada data tampilan barang.
