@@ -4,6 +4,8 @@ export const dynamic = "force-dynamic";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import AdminDashboardClient from "./AdminDashboardClient";
+import DpReminderCard from "@/components/portal/DpReminderCard";
+import { getDpNeedingContact } from "@/lib/dp/queries";
 
 import { getSession } from "@/lib/session";
 
@@ -60,7 +62,8 @@ async function DashboardData() {
     totalReturCount,
     returAmountAgg,
     pendingApprovalCount,
-    topViewedItems
+    topViewedItems,
+    dpData
   ] = await Promise.all([
     prisma.auctionItem.count({
       where: {
@@ -131,7 +134,8 @@ async function DashboardData() {
         viewCount: true,
         branchName: true
       }
-    })
+    }),
+    getDpNeedingContact(session?.role || "ADMIN", session?.asal_cabang)
   ]);
 
   const totalReturAmount = Number(returAmountAgg._sum.refundAmount || 0);
@@ -224,13 +228,16 @@ async function DashboardData() {
   };
 
   return (
-    <AdminDashboardClient 
-      initialData={initialData}
-      initialStartDate="null"
-      initialEndDate="null"
-      userName={session?.nama_lengkap || "Admin"}
-      userBranch={session?.asal_cabang || "Pusat"}
-    />
+    <div className="space-y-6">
+      <DpReminderCard data={dpData} />
+      <AdminDashboardClient 
+        initialData={initialData}
+        initialStartDate="null"
+        initialEndDate="null"
+        userName={session?.nama_lengkap || "Admin"}
+        userBranch={session?.asal_cabang || "Pusat"}
+      />
+    </div>
   );
 }
 

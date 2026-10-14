@@ -17,6 +17,7 @@ import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { normalizePhone } from "@/lib/dp/whatsapp";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,8 @@ type LastTx = {
   amountTransfer: number;
   isDP: boolean;
   dpAmount: number;
+  buyerName?: string;
+  buyerPhone?: string;
 };
 
 type Props = {
@@ -105,6 +108,8 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
   
   const [isDP, setIsDP] = useState(false);
   const [dpAmount, setDpAmount] = useState<string>("");
+  const [buyerName, setBuyerName] = useState<string>("");
+  const [buyerPhone, setBuyerPhone] = useState<string>("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<any>(null);
@@ -351,6 +356,11 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
         toast.error("Nominal DP harus lebih dari 0 dan kurang dari total tagihan.");
         return;
       }
+      const phoneValidation = normalizePhone(buyerPhone);
+      if (!phoneValidation.isValid) {
+        toast.error(phoneValidation.error || "Nomor WhatsApp pembeli wajib diisi dengan benar (min 10 digit, contoh: 08123456789).");
+        return;
+      }
     }
 
     setShowConfirmCheckout(true);
@@ -380,6 +390,8 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
         amountTransfer: finalTransfer,
         isDP,
         dpAmount: targetAmount,
+        buyerName: isDP && buyerName ? buyerName.trim() : undefined,
+        buyerPhone: isDP ? buyerPhone.trim() : undefined,
         items: cartItems.map((item) => ({
           itemId: item.id,
           sku: item.sku,
@@ -418,12 +430,16 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
           amountTransfer: finalTransfer,
           isDP,
           dpAmount: targetAmount,
+          buyerName: isDP && buyerName ? buyerName.trim() : undefined,
+          buyerPhone: isDP ? buyerPhone.trim() : undefined,
         });
 
         toast.success(`Transaksi Berhasil! ${cartItems.length} barang telah terjual.`);
         setCartItems([]);
         setIsDP(false);
         setDpAmount("");
+        setBuyerName("");
+        setBuyerPhone("");
         setSplitCash("");
         setSplitTransfer("");
         clearCartStorage();
@@ -725,15 +741,51 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
                       </label>
                     </div>
                     {isDP && (
-                      <div className="pt-2 border-t border-slate-100">
-                        <label className="text-[10px] font-bold text-slate-500">Nominal Dibayarkan (Rp)</label>
+                      <div className="pt-2 border-t border-slate-100 space-y-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500">
+                            Nominal DP Dibayarkan (Rp) <span className="text-rose-500">*</span>
+                          </label>
                           <input
                             type="text"
                             placeholder="0"
                             value={dpAmount ? Number(dpAmount).toLocaleString('id-ID') : ""}
                             onChange={(e) => setDpAmount(e.target.value.replace(/\D/g, ""))}
-                          className="w-full mt-1 bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:border-brand-500"
-                        />
+                            className="w-full mt-1 bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:border-brand-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-500">
+                            Nama Pembeli (Opsional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Budi Santoso"
+                            value={buyerName}
+                            onChange={(e) => setBuyerName(e.target.value)}
+                            className="w-full mt-1 bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-brand-500"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-bold text-slate-500">
+                              No. WhatsApp Pembeli <span className="text-rose-500">*</span>
+                            </label>
+                            <span className="text-[9px] text-slate-400">Untuk notifikasi tagihan</span>
+                          </div>
+                          <input
+                            type="tel"
+                            placeholder="08123456789"
+                            value={buyerPhone}
+                            onChange={(e) => setBuyerPhone(e.target.value)}
+                            className="w-full mt-1 bg-slate-50 border border-slate-200 text-slate-900 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-brand-500 font-mono"
+                          />
+                          {buyerPhone && !normalizePhone(buyerPhone).isValid && (
+                            <p className="text-[10px] text-rose-500 mt-1">Format nomor belum valid (min 10 digit, contoh: 08123456789)</p>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -837,6 +889,18 @@ export default function KasirPOSClient({ cashierName, branchName }: Props) {
 
           {lastTx.isDP && (
             <div className="pt-2 mt-2 border-t border-black/20 text-[10px] space-y-1">
+              {lastTx.buyerName && (
+                <div className="flex justify-between">
+                  <span>Pembeli:</span>
+                  <span className="font-semibold">{lastTx.buyerName}</span>
+                </div>
+              )}
+              {lastTx.buyerPhone && (
+                <div className="flex justify-between">
+                  <span>No. WA:</span>
+                  <span className="font-mono">{lastTx.buyerPhone}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold">
                 <span>DIBAYAR (DP):</span>
                 <span>{formatIDR(lastTx.dpAmount)}</span>

@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   },
 };
 
+import DpBadge from "@/components/portal/DpBadge";
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
 
@@ -27,9 +29,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     return <>{children}</>;
   }
 
+  const dpBadge = <DpBadge role={session.role} userBranch={session.asal_cabang} />;
+
   return (
     <div className="min-h-screen bg-slate-50 flex print:!block print:!bg-white">
-      <AdminSidebar role={session.role} userBranch={session.asal_cabang} />
+      <AdminSidebar role={session.role} userBranch={session.asal_cabang} badgeSlot={dpBadge} />
 
       {/* Main Content Area */}
       <main className="flex-1 ml-0 md:ml-64 p-4 pb-24 md:p-8 md:pb-8 min-h-screen relative overflow-y-auto print:!ml-0 print:!p-0 print:!pb-0 print:!overflow-visible">
@@ -40,7 +44,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <AdminBottomNav />
+      <AdminBottomNav badgeSlot={dpBadge} />
       
       <Toaster position="top-right" richColors closeButton />
     </div>

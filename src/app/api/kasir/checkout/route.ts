@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/audit";
+import { calcDpDueDate } from "@/lib/dp/stage";
+import { normalizePhone } from "@/lib/dp/whatsapp";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items, paymentMethod, amountCash, amountTransfer, isDP, dpAmount } = body;
+    const { items, paymentMethod, amountCash, amountTransfer, isDP, dpAmount, buyerName, buyerPhone } = body;
 
     // Validate: must have items array
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -15,6 +17,18 @@ export async function POST(request: Request) {
         { success: false, message: "Keranjang kosong. Minimal 1 barang untuk checkout." },
         { status: 400 }
       );
+    }
+
+    let normalizedBuyerPhone: string | null = null;
+    if (isDP) {
+      const phoneCheck = normalizePhone(buyerPhone);
+      if (!phoneCheck.isValid) {
+        return NextResponse.json(
+          { success: false, message: phoneCheck.error || "Nomor WhatsApp pembeli wajib diisi dengan benar untuk transaksi DP." },
+          { status: 400 }
+        );
+      }
+      normalizedBuyerPhone = phoneCheck.normalized;
     }
 
     // Validate each item
@@ -49,7 +63,7 @@ export async function POST(request: Request) {
 
         // 3. Create sales transaction record
         const txStatus = isDP ? "DP" : "LUNAS";
-        const dpDeadline = isDP ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null;
+        const dpDeadline = isDP ? calcDpDueDate(new Date()) : null;
 
         const salesTx = await tx.salesTransaction.create({
           data: {
@@ -63,6 +77,8 @@ export async function POST(request: Request) {
             amountTransfer: amountTransfer || null,
             status: txStatus,
             dpDeadline,
+            buyerName: isDP && buyerName ? buyerName.trim() : null,
+            buyerPhone: isDP ? normalizedBuyerPhone : null,
           },
         });
 

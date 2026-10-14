@@ -83,12 +83,17 @@ model SalesTransaction {
   returns         SalesReturn[]
 
   // --- Metode Pembayaran & DP ---
-  paymentMethod  PaymentMethod        @default(TUNAI) @map("payment_method")
-  amountCash     Decimal?             @map("amount_cash") @db.Decimal(12, 2)
-  amountTransfer Decimal?             @map("amount_transfer") @db.Decimal(12, 2)
-  status         TransactionStatus    @default(LUNAS)
-  dpDeadline     DateTime?            @map("dp_deadline")
-  installments   PaymentInstallment[]
+  paymentMethod    PaymentMethod        @default(TUNAI) @map("payment_method")
+  amountCash       Decimal?             @map("amount_cash") @db.Decimal(12, 2)
+  amountTransfer   Decimal?             @map("amount_transfer") @db.Decimal(12, 2)
+  status           TransactionStatus    @default(LUNAS)
+  dpDeadline       DateTime?            @map("dp_deadline")
+  installments     PaymentInstallment[]
+  buyerName        String?              @map("buyer_name")
+  buyerPhone       String?              @map("buyer_phone")
+  lastContactedAt  DateTime?            @map("last_contacted_at")
+  lastContactStage String?              @map("last_contact_stage")
+  contactCount     Int                  @default(0) @map("contact_count")
 
   @@index([transactionDate])
   @@index([branchName])

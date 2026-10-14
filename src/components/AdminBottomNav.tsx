@@ -20,7 +20,7 @@ type CartItem = {
 
 const CART_STORAGE_KEY = "mbg_pos_cart";
 
-export default function AdminBottomNav() {
+export default function AdminBottomNav({ badgeSlot }: { badgeSlot?: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -224,7 +224,14 @@ export default function AdminBottomNav() {
                 isActive ? "text-brand-600" : "text-slate-400 hover:text-slate-600"
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? "text-brand-600" : ""}`} />
+              <div className="relative">
+                <Icon className={`w-5 h-5 ${isActive ? "text-brand-600" : ""}`} />
+                {tab.href === "/mbg-internal-portal" && badgeSlot && (
+                  <div className="absolute -top-1.5 -right-2 scale-75 origin-top-right">
+                    {badgeSlot}
+                  </div>
+                )}
+              </div>
               <span className={`text-[9px] sm:text-[10px] font-bold ${isActive ? "text-brand-600" : ""}`}>
                 {tab.name}
               </span>

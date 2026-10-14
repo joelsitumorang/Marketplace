@@ -5,7 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, PackageSearch, PlusCircle, LogOut, ScanLine, BarChart3, Users, History, Warehouse, RotateCcw } from "lucide-react";
 import { Role } from "@prisma/client";
 
-export default function AdminSidebar({ role, userBranch }: { role: Role, userBranch: string }) {
+export default function AdminSidebar({ 
+  role, 
+  userBranch, 
+  badgeSlot 
+}: { 
+  role: Role; 
+  userBranch: string; 
+  badgeSlot?: React.ReactNode; 
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -55,14 +63,17 @@ export default function AdminSidebar({ role, userBranch }: { role: Role, userBra
               key={item.href}
               href={item.href}
               prefetch={true}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
                 isItemActive 
                   ? "bg-brand-600 text-white font-semibold shadow-md shadow-brand-500/20" 
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
-              <Icon className={`w-5 h-5 ${isItemActive ? "text-white" : "text-slate-400"}`} />
-              {item.name}
+              <div className="flex items-center gap-3">
+                <Icon className={`w-5 h-5 ${isItemActive ? "text-white" : "text-slate-400"}`} />
+                <span>{item.name}</span>
+              </div>
+              {item.href === "/mbg-internal-portal" && badgeSlot}
             </Link>
           );
         })}

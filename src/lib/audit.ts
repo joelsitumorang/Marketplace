@@ -8,7 +8,8 @@ export type AuditLogEventType =
   | "Retur Diajukan"
   | "Retur Otomatis Disetujui"
   | "Retur Disetujui SUPERADMIN"
-  | "Retur Ditolak";
+  | "Retur Ditolak"
+  | "DP_CONTACTED";
 
 export async function logActivity({
   adminEmail,
