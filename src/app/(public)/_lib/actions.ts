@@ -3,33 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { Status, Prisma } from "@prisma/client";
 import { CatalogParams } from "./params";
-import {
-  catalogItemSelect,
-  buildCatalogWhere,
-  buildCatalogOrderBy,
-  serializeItems,
-} from "./query";
+import { fetchCatalogPage } from "./query";
+import { formatProductTitle } from "@/lib/product-display";
 
 export async function loadMoreCatalogItems(params: CatalogParams, skip: number, take = 20) {
-  const where = buildCatalogWhere(params);
-  const orderBy = buildCatalogOrderBy(params.sort);
-
-  const [items, total] = await Promise.all([
-    prisma.auctionItem.findMany({
-      where,
-      select: catalogItemSelect,
-      orderBy,
-      skip,
-      take,
-    }),
-    prisma.auctionItem.count({ where }),
-  ]);
-
-  return {
-    items: serializeItems(items),
-    total,
-    hasMore: skip + items.length < total,
-  };
+  return fetchCatalogPage(params, skip, take);
 }
 
 export async function suggestItems(q: string) {
@@ -68,7 +46,7 @@ export async function suggestItems(q: string) {
   return suggestions.map((s) => ({
     id: s.id,
     sku: s.sku,
-    title: s.title,
+    title: formatProductTitle(s.title),
     price: Number(s.price),
     category: s.category,
   }));

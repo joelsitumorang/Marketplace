@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MapPin, Flame, SearchX } from "lucide-react";
+import { MapPin, SearchX } from "lucide-react";
 import { CatalogParams } from "./_lib/params";
 import { CatalogItemSummary } from "./_lib/query";
 import { loadMoreCatalogItems } from "./_lib/actions";
@@ -100,8 +100,8 @@ export default function CatalogView({
         {items.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 pt-1">
             {items.map((item, index) => {
-              const isUnavailable = item.status === "Terjual";
-              const isRecommended = item.kondisi === "Baru" || item.price > 5000000;
+              const isSold = item.publicStatus === "terjual";
+              const isBooked = item.publicStatus === "dibooking";
               const thumbUrl =
                 item.thumbnailIndex !== null &&
                 item.thumbnailIndex !== undefined &&
@@ -112,13 +112,14 @@ export default function CatalogView({
               return (
                 <Link
                   key={item.id}
-                  href={isUnavailable ? "#" : `/katalog/${item.id}`}
+                  href={isSold ? "#" : `/katalog/${item.id}`}
                   onClick={(e) => {
-                    if (isUnavailable) e.preventDefault();
+                    if (isSold) e.preventDefault();
                   }}
+                  aria-disabled={isSold || undefined}
                   className={`bg-white rounded-xl sm:rounded-2xl overflow-hidden flex flex-col group border relative text-left w-full focus:outline-none content-visibility-card transition-all duration-300 block ${
-                    isUnavailable
-                      ? "grayscale opacity-50 border-gray-150 shadow-none cursor-not-allowed"
+                    isSold
+                      ? "border-slate-200 shadow-none cursor-not-allowed"
                       : "border-slate-200 shadow-2xs hover:shadow-md md:hover:-translate-y-0.5"
                   }`}
                 >
@@ -127,11 +128,11 @@ export default function CatalogView({
                     {thumbUrl ? (
                       <Image
                         src={thumbUrl}
-                        alt={item.title}
+                        alt={item.displayTitle}
                         fill
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                         className={`object-cover ${
-                          !isUnavailable && "group-hover:scale-105 transition-transform duration-500"
+                          isSold ? "grayscale opacity-60" : "group-hover:scale-105 transition-transform duration-500"
                         }`}
                         priority={index < 4}
                       />
@@ -141,21 +142,28 @@ export default function CatalogView({
                       </div>
                     )}
 
-                    {/* Unavailable Overlay */}
-                    {isUnavailable && (
-                      <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-20">
-                        <span className="px-2 py-1 sm:px-4 sm:py-2 border-2 border-red-600 text-red-600 font-black text-xs sm:text-base tracking-widest rounded-lg transform -rotate-12 bg-red-50/90 shadow-md uppercase">
-                          {item.status}
+                    {/* Overlay Terjual */}
+                    {isSold && (
+                      <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-20">
+                        <span className="px-2 py-1 sm:px-4 sm:py-2 border-2 border-red-600 text-red-600 font-black text-xs sm:text-base tracking-widest rounded-lg -rotate-12 bg-white uppercase">
+                          Terjual
                         </span>
                       </div>
                     )}
 
-                    {/* Pilihan Terbaik Flame Badge */}
-                    {!isUnavailable && isRecommended && (
+                    {/* Status Ketersediaan O2O */}
+                    {!isSold && (
                       <div className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 z-10">
-                        <span className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 flex items-center gap-1 rounded-md sm:rounded-lg text-[8px] sm:text-[10px] uppercase font-black shadow-xs bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                          <Flame className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                          <span className="hidden sm:inline">Pilihan Terbaik</span>
+                        <span
+                          className={`px-1.5 py-0.5 sm:px-2 flex items-center gap-1 rounded-md text-[9px] sm:text-[10px] font-bold ${
+                            isBooked ? "bg-amber-500 text-white" : "bg-white text-emerald-700"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${isBooked ? "bg-white" : "bg-emerald-500"}`}
+                            aria-hidden="true"
+                          />
+                          {isBooked ? "Dibooking" : "Tersedia"}
                         </span>
                       </div>
                     )}
@@ -178,14 +186,34 @@ export default function CatalogView({
                       {item.category}
                     </div>
                     <h3
-                      className="font-semibold text-slate-900 leading-snug mb-1 sm:mb-2 line-clamp-2 text-xs sm:text-base group-hover:text-blue-600 transition-colors h-8 sm:h-12 overflow-hidden"
+                      className={`font-semibold leading-snug mb-1.5 line-clamp-2 text-xs sm:text-base transition-colors h-8 sm:h-12 overflow-hidden ${
+                        isSold ? "text-slate-500" : "text-slate-900 group-hover:text-blue-600"
+                      }`}
                       title={item.title}
                     >
-                      {item.title}
+                      {item.displayTitle}
                     </h3>
 
+                    {/* Spesifikasi kunci (maks. 2 chip) */}
+                    {item.specs.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1 max-h-[18px] sm:max-h-5 overflow-hidden">
+                        {item.specs.map((spec) => (
+                          <span
+                            key={spec}
+                            className="max-w-full truncate rounded bg-slate-100 px-1.5 py-px text-[10px] sm:text-[11px] font-medium text-slate-700 tabular-nums"
+                          >
+                            {spec}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="mt-auto pt-2">
-                      <div className="text-xs sm:text-lg font-black text-blue-800 mb-1.5 truncate">
+                      <div
+                        className={`text-xs sm:text-lg font-black mb-1.5 truncate ${
+                          isSold ? "text-slate-400 line-through" : "text-blue-800"
+                        }`}
+                      >
                         {formatIDR(item.price)}
                       </div>
                       <div className="flex items-center text-[9px] sm:text-xs text-slate-500 gap-1 pt-1.5 border-t border-slate-100">

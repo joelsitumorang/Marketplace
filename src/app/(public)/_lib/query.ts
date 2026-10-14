@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { Status, Kondisi, Prisma } from "@prisma/client";
+import { Status, Kondisi, Prisma, TransactionStatus } from "@prisma/client";
 import { CatalogParams, PRICE_PRESETS } from "./params";
+import {
+  PublicStatus,
+  derivePublicStatus,
+  extractKeySpecs,
+  formatProductTitle,
+} from "@/lib/product-display";
+
+/** Barang terjual tetap tampil (di urutan bawah) selama sekian hari setelah transaksi. */
+export const SOLD_VISIBLE_DAYS = 7;
 
 export const catalogItemSelect = {
   id: true,
@@ -8,6 +17,8 @@ export const catalogItemSelect = {
   branchName: true,
   title: true,
   category: true,
+  // Hanya dibaca di server untuk ekstraksi spesifikasi, tidak dikirim ke browser
+  description: true,
   price: true,
   status: true,
   images: true,
@@ -15,13 +26,26 @@ export const catalogItemSelect = {
   kondisi: true,
   createdAt: true,
   isMarketplaceVisible: true,
-} as const;
+  transactions: {
+    where: { isReturned: false },
+    orderBy: { transactionDate: "desc" },
+    take: 1,
+    select: { status: true },
+  },
+} satisfies Prisma.AuctionItemSelect;
+
+type CatalogItemRow = Prisma.AuctionItemGetPayload<{ select: typeof catalogItemSelect }>;
 
 export type CatalogItemSummary = {
   id: number;
   sku: string;
   branchName: string;
   title: string;
+  /** Judul yang sudah dirapikan untuk tampilan */
+  displayTitle: string;
+  /** Maksimal 2 spesifikasi kunci, mis. ["128GB", "BH 84%"] */
+  specs: string[];
+  publicStatus: PublicStatus;
   category: string;
   price: number;
   status: Status;
@@ -31,13 +55,13 @@ export type CatalogItemSummary = {
   createdAt: string;
 };
 
-export function buildCatalogWhere(params: CatalogParams): Prisma.AuctionItemWhereInput {
+/** Filter dari URL (kategori, kondisi, harga, cabang, kata kunci) tanpa aturan status. */
+export function buildCatalogFilterWhere(params: CatalogParams): Prisma.AuctionItemWhereInput {
   const where: Prisma.AuctionItemWhereInput = {
     branchName: {
       contains: "Pasuruan",
       mode: "insensitive",
     },
-    status: Status.Tersedia,
     isMarketplaceVisible: true,
   };
 
@@ -89,6 +113,36 @@ export function buildCatalogWhere(params: CatalogParams): Prisma.AuctionItemWher
   return where;
 }
 
+const ACTIVE_DP_TRANSACTION: Prisma.SalesTransactionWhereInput = {
+  isReturned: false,
+  status: TransactionStatus.DP,
+};
+
+/** Grup atas: Tersedia + Dibooking (status Dipesan, atau Terjual dengan DP aktif). */
+const ACTIVE_STATUS_WHERE: Prisma.AuctionItemWhereInput = {
+  OR: [
+    { status: { in: [Status.Tersedia, Status.Dipesan] } },
+    { status: Status.Terjual, transactions: { some: ACTIVE_DP_TRANSACTION } },
+  ],
+};
+
+/** Grup bawah: Terjual lunas dalam SOLD_VISIBLE_DAYS hari terakhir. */
+function buildSoldStatusWhere(now = new Date()): Prisma.AuctionItemWhereInput {
+  const cutoff = new Date(now.getTime() - SOLD_VISIBLE_DAYS * 24 * 60 * 60 * 1000);
+  return {
+    status: Status.Terjual,
+    transactions: {
+      some: { isReturned: false, transactionDate: { gte: cutoff } },
+      none: ACTIVE_DP_TRANSACTION,
+    },
+  };
+}
+
+/** Kompatibilitas: where untuk barang yang bisa dibeli/dibooking. */
+export function buildCatalogWhere(params: CatalogParams): Prisma.AuctionItemWhereInput {
+  return { AND: [buildCatalogFilterWhere(params), ACTIVE_STATUS_WHERE] };
+}
+
 export function buildCatalogOrderBy(
   sort: CatalogParams["sort"]
 ): Prisma.AuctionItemOrderByWithRelationInput[] {
@@ -103,12 +157,15 @@ export function buildCatalogOrderBy(
   }
 }
 
-export function serializeItems(items: any[]): CatalogItemSummary[] {
+export function serializeItems(items: CatalogItemRow[]): CatalogItemSummary[] {
   return items.map((item) => ({
     id: item.id,
     sku: item.sku,
     branchName: item.branchName,
     title: item.title,
+    displayTitle: formatProductTitle(item.title),
+    specs: extractKeySpecs({ title: item.title, description: item.description }),
+    publicStatus: derivePublicStatus(item.status, item.transactions[0]?.status ?? null),
     category: item.category,
     price: Number(item.price),
     status: item.status,
@@ -119,23 +176,51 @@ export function serializeItems(items: any[]): CatalogItemSummary[] {
   }));
 }
 
-export async function fetchCatalogData(params: CatalogParams, pageSize = 20) {
-  const where = buildCatalogWhere(params);
+/**
+ * Mengambil satu halaman katalog: barang tersedia/dibooking lebih dulu,
+ * lalu barang terjual di urutan bawah. `skip` dihitung lintas kedua grup.
+ */
+export async function fetchCatalogPage(params: CatalogParams, skip = 0, take = 20) {
+  const filter = buildCatalogFilterWhere(params);
   const orderBy = buildCatalogOrderBy(params.sort);
+  const activeWhere: Prisma.AuctionItemWhereInput = { AND: [filter, ACTIVE_STATUS_WHERE] };
+  const soldWhere: Prisma.AuctionItemWhereInput = { AND: [filter, buildSoldStatusWhere()] };
 
-  const [items, total] = await Promise.all([
+  const [activeTotal, soldTotal, activeItems] = await Promise.all([
+    prisma.auctionItem.count({ where: activeWhere }),
+    prisma.auctionItem.count({ where: soldWhere }),
     prisma.auctionItem.findMany({
-      where,
+      where: activeWhere,
       select: catalogItemSelect,
       orderBy,
-      take: pageSize,
+      skip,
+      take,
     }),
-    prisma.auctionItem.count({ where }),
   ]);
 
+  const rows: CatalogItemRow[] = [...activeItems];
+  const remaining = take - rows.length;
+
+  if (remaining > 0 && soldTotal > 0) {
+    const soldItems = await prisma.auctionItem.findMany({
+      where: soldWhere,
+      select: catalogItemSelect,
+      orderBy,
+      skip: Math.max(0, skip - activeTotal),
+      take: remaining,
+    });
+    rows.push(...soldItems);
+  }
+
+  const total = activeTotal + soldTotal;
+
   return {
-    items: serializeItems(items),
+    items: serializeItems(rows),
     total,
-    hasMore: items.length < total,
+    hasMore: skip + rows.length < total,
   };
+}
+
+export async function fetchCatalogData(params: CatalogParams, pageSize = 20) {
+  return fetchCatalogPage(params, 0, pageSize);
 }
