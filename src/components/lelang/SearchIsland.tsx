@@ -41,8 +41,8 @@ export function SearchIsland({ initialParams, availableBranches = [] }: SearchIs
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync state with URL searchParams
@@ -89,21 +89,32 @@ export function SearchIsland({ initialParams, availableBranches = [] }: SearchIs
     }
   };
 
-  // Setup IntersectionObserver sentinel for reliable collapsed state
+  // Dynamically calculate and set --stick based on actual DOM position & safe area insets
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    const updateStickAndCollapsed = () => {
+      if (wrapRef.current) {
+        const rect = wrapRef.current.getBoundingClientRect();
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const topOffset = rect.top + scrollTop;
+        const computedTop = parseFloat(window.getComputedStyle(wrapRef.current).top) || 16;
+        const stick = Math.max(0, Math.round(topOffset - computedTop));
+        document.documentElement.style.setProperty("--stick", `${stick}px`);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // When sentinel scrolls out of view above top, pill is collapsed
-        setIsCollapsed(!entry.isIntersecting);
-      },
-      { root: null, threshold: 0 }
-    );
+        // Check if currently scrolled past the shrink threshold
+        setIsCollapsed(scrollTop >= stick + 60);
+      }
+    };
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+    updateStickAndCollapsed();
+    window.addEventListener("scroll", updateStickAndCollapsed, { passive: true });
+    window.addEventListener("resize", updateStickAndCollapsed, { passive: true });
+    window.addEventListener("orientationchange", updateStickAndCollapsed, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", updateStickAndCollapsed);
+      window.removeEventListener("resize", updateStickAndCollapsed);
+      window.removeEventListener("orientationchange", updateStickAndCollapsed);
+    };
   }, []);
 
   // Fetch suggestions when typing in expanded state
@@ -201,15 +212,9 @@ export function SearchIsland({ initialParams, availableBranches = [] }: SearchIs
 
   return (
     <>
-      {/* 1px Sentinel untuk IntersectionObserver (Bagian 7.3) */}
+      {/* Sticky Dynamic Island Wrap (Direct child of full height container) */}
       <div
-        ref={sentinelRef}
-        className="w-full h-[1px] pointer-events-none opacity-0"
-        aria-hidden="true"
-      />
-
-      {/* Sticky Dynamic Island Wrap */}
-      <div
+        ref={wrapRef}
         className="island-wrap px-4 sm:px-6"
         data-collapsed={isCollapsed ? "true" : "false"}
         data-expanded={isExpanded ? "true" : "false"}
@@ -275,6 +280,7 @@ export function SearchIsland({ initialParams, availableBranches = [] }: SearchIs
           aria-modal="true"
           aria-label="Cari barang"
           className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6"
+          style={{ paddingTop: "max(14px, calc(env(safe-area-inset-top, 0px) + 10px))" }}
         >
           {/* Background Scrim (no blur) */}
           <div
