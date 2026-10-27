@@ -18,6 +18,8 @@ import DateRangePicker, { DateRange } from "@/components/DateRangePicker";
 import Link from "next/link";
 import { KategoriBarList } from "./KategoriBarList";
 import { TopViewedList } from "./TopViewedList";
+import DpReminderCard from "@/components/portal/DpReminderCard";
+import type { DpQueryResult } from "@/lib/dp/queries";
 
 const toLocalIsoDateString = (date: Date | null): string => {
   if (!date) return "";
@@ -68,6 +70,7 @@ type Props = {
   initialEndDate: string;
   userName?: string;
   userBranch?: string;
+  dpReminderData?: DpQueryResult | null;
 };
 
 const rapikanNamaCabang = (raw: string) =>
@@ -75,7 +78,7 @@ const rapikanNamaCabang = (raw: string) =>
 
 const PIE_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#3b82f6", "#06b6d4"];
 
-export default function AdminDashboardClient({ initialData, initialStartDate, initialEndDate, userName, userBranch }: Props) {
+export default function AdminDashboardClient({ initialData, initialStartDate, initialEndDate, userName, userBranch, dpReminderData }: Props) {
   const [data, setData] = useState<AnalyticsData>(initialData);
   const [loading, setLoading] = useState(false);
 
@@ -159,7 +162,8 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
       <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-br from-brand-600 to-red-500 -z-10 -mx-4 md:-mx-8 -mt-4 md:-mt-8 rounded-b-3xl"></div>
       
       {/* Welcome Message (Glassmorphism) */}
-      <div className="mx-2 sm:mx-0 mt-2 mb-4 p-3.5 sm:p-4 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-sm text-white">
+      {/* Sapaan Teks Putih Polos Langsung di Atas Gradient */}
+      <div className="mx-2 sm:mx-0 mt-2 mb-3 px-4 py-2 text-white">
         <h1 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2 flex-wrap">
           <span>Selamat Datang, {userName || "Admin"}!</span>
           <span className="inline-block text-lg sm:text-xl">👋</span>
@@ -208,6 +212,13 @@ export default function AdminDashboardClient({ initialData, initialStartDate, in
            <span className="text-[10px] md:text-xs text-slate-500 leading-tight mt-1">Pesanan<br/>Selesai</span>
         </div>
       </div>
+
+      {/* Fase 3: Pengingat DP Pelunasan Pembeli */}
+      {dpReminderData && (
+        <div className="mx-2 sm:mx-0 mb-4">
+          <DpReminderCard data={dpReminderData} />
+        </div>
+      )}
 
       {/* Fase 3: Menu Navigasi Grid (Icon Horizontal) */}
       <div className="mx-2 sm:mx-0 mb-6">

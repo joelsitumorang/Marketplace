@@ -2,42 +2,62 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { 
-  Clock, 
-  AlertCircle, 
-  AlertTriangle, 
-  MessageCircle, 
-  Check, 
-  ExternalLink, 
-  ChevronDown,
-  PhoneOff,
-  Loader2
-} from "lucide-react";
+import { Check, ChevronRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { DpItemDTO, DpQueryResult } from "@/lib/dp/queries";
 import { markDpContacted } from "@/app/mbg-internal-portal/_actions/dp";
+import { formatRupiah } from "@/lib/share";
 
 interface DpReminderCardProps {
-  data: DpQueryResult;
+  data?: DpQueryResult | null;
+}
+
+const labelTelat = (daysDiff: number, stageLabel?: string) => {
+  if (daysDiff < 0) return `lewat ${Math.abs(daysDiff)} hari`;
+  if (daysDiff === 0) return "jatuh tempo hari ini";
+  return stageLabel?.toLowerCase() || "besok jatuh tempo";
+};
+
+function DaftarMenunggu({ items }: { items: DpItemDTO[] }) {
+  return (
+    <ul className="px-4 pb-2 border-t border-slate-100 divide-y divide-slate-100">
+      {items.map((m) => (
+        <li
+          key={m.id}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 py-2.5 text-[13px]"
+        >
+          <div className="min-w-0 flex-1">
+            <span className="font-medium text-slate-900 truncate block" title={m.itemName}>
+              {m.itemName}
+            </span>
+            <span className="text-xs text-slate-500 truncate block">
+              {m.buyerName || "Tanpa nama"} · kurang {formatRupiah(m.remainingAmount)} · dihubungi {m.contactCount}x
+            </span>
+          </div>
+          {m.isPhoneValid && m.waLink && (
+            <a
+              href={m.waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[36px] self-start sm:self-auto shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+            >
+              <span>Hubungi ulang</span>
+            </a>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export default function DpReminderCard({ data }: DpReminderCardProps) {
+  const [buka, setBuka] = useState(false);
   const [selectedTx, setSelectedTx] = useState<DpItemDTO | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const { perluDihubungi, menungguPembeli, totalNeedingContact } = data;
-
-  // Aturan Brief 5.5: Sembunyikan kartu bila N = 0 (hindari kartu kosong)
-  if (totalNeedingContact === 0 && menungguPembeli.length === 0) {
-    return null;
-  }
-
-  const formatRupiah = (val: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
+  const { perluDihubungi = [], menungguPembeli = [], totalNeedingContact = 0 } = data || {};
+  const laporanHref = "/mbg-internal-portal/reports";
 
   const handleConfirmContacted = () => {
     if (!selectedTx) return;
@@ -50,7 +70,7 @@ export default function DpReminderCard({ data }: DpReminderCardProps) {
         } else {
           toast.error(res.message);
         }
-      } catch (err: any) {
+      } catch {
         toast.error("Gagal memperbarui status kontak.");
       } finally {
         setSelectedTx(null);
@@ -58,197 +78,156 @@ export default function DpReminderCard({ data }: DpReminderCardProps) {
     });
   };
 
-  const renderStageChip = (item: DpItemDTO) => {
-    if (item.stage === "H_MINUS_1") {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
-          <Clock className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
-          <span>{item.stageLabel}</span>
+  // Kondisi A: tidak ada yang perlu dihubungi (N = 0)
+  if (totalNeedingContact === 0) {
+    const isi = (
+      <>
+        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate text-[13px]">
+          <span className="font-medium text-slate-900">Pengingat DP</span>
+          <span className="text-slate-500"> · semua sudah dihubungi hari ini</span>
         </span>
-      );
-    }
-    if (item.stage === "H0") {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-50 text-orange-800 border border-orange-200 shrink-0">
-          <AlertCircle className="w-3.5 h-3.5 text-orange-600" aria-hidden="true" />
-          <span>{item.stageLabel}</span>
-        </span>
-      );
-    }
-    // OVERDUE
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-200 shrink-0">
-        <AlertTriangle className="w-3.5 h-3.5 text-rose-600" aria-hidden="true" />
-        <span>{item.stageLabel}</span>
-      </span>
+      </>
     );
-  };
+
+    return (
+      <section className="rounded-xl border border-slate-200 bg-white">
+        {menungguPembeli.length > 0 ? (
+          <button
+            type="button"
+            aria-expanded={buka}
+            onClick={() => setBuka(!buka)}
+            className="flex min-h-12 w-full items-center gap-2.5 px-4 text-left hover:bg-slate-50 transition-colors"
+          >
+            {isi}
+            <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+              {menungguPembeli.length} menunggu
+            </span>
+            <ChevronRight
+              className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${buka ? "rotate-90" : ""}`}
+              aria-hidden="true"
+            />
+          </button>
+        ) : (
+          <div className="flex min-h-12 items-center gap-2.5 px-4">
+            {isi}
+            <Link
+              href={laporanHref}
+              className="shrink-0 text-xs font-medium text-slate-500 hover:text-slate-700"
+            >
+              Semua laporan ↗
+            </Link>
+          </div>
+        )}
+        {buka && menungguPembeli.length > 0 && <DaftarMenunggu items={menungguPembeli} />}
+      </section>
+    );
+  }
+
+  // Kondisi B: ada yang perlu dihubungi (N >= 1)
+  const tampil = perluDihubungi.slice(0, 3);
+  const sisa = perluDihubungi.length - tampil.length;
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      <section className="rounded-xl border border-slate-200 bg-white">
         {/* Header Kartu */}
-        <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white">
-          <div className="flex items-center gap-2.5">
-            <div className="w-3 h-3 rounded-full bg-rose-500 animate-pulse" aria-hidden="true" />
-            <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">
-              Perlu Dihubungi ({totalNeedingContact})
-            </h3>
-            <span className="text-xs text-slate-500 hidden sm:inline">
-              — Pengingat pelunasan DP pembeli
-            </span>
-          </div>
-
+        <div className="flex items-center gap-2.5 px-4 py-3 text-[13px]">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
+          <span className="flex-1 font-medium text-slate-900">Perlu dihubungi ({totalNeedingContact})</span>
           <Link
-            href="/mbg-internal-portal/reports"
-            className="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 transition-colors min-h-[36px]"
+            href={laporanHref}
+            className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 shrink-0"
           >
-            <span>Semua Laporan</span>
-            <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Semua laporan</span>
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </Link>
         </div>
 
-        {/* Daftar Utama: Perlu Dihubungi */}
-        {perluDihubungi.length > 0 ? (
-          <div className="divide-y divide-slate-100">
-            {perluDihubungi.map((item) => (
-              <div
-                key={item.id}
-                className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors"
+        {/* Daftar Maksimal 3 Item */}
+        <ul className="divide-y divide-slate-100">
+          {tampil.map((d) => {
+            const terlambatLabel = labelTelat(d.daysDiff, d.stageLabel);
+            return (
+              <li
+                key={d.id}
+                className="flex items-center gap-2.5 sm:gap-3 border-t border-slate-100 px-4 py-2.5"
               >
-                {/* Info Barang & Pembeli */}
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {renderStageChip(item)}
-                    <span className="text-xs font-mono text-slate-400">SKU: {item.sku}</span>
-                    <span className="text-xs text-slate-400">•</span>
-                    <span className="text-xs text-slate-500 font-medium">{item.branchName}</span>
-                  </div>
-
-                  <h4 className="font-bold text-slate-900 text-sm sm:text-base truncate" title={item.itemName}>
-                    {item.itemName}
-                  </h4>
-
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
-                    <div>
-                      <span className="text-slate-400">Pembeli: </span>
-                      <span className="font-bold text-slate-800">
-                        {item.buyerName ? item.buyerName : "Tanpa nama"}
-                      </span>
-                    </div>
-                    <span className="text-slate-300 hidden sm:inline">•</span>
-                    <div className="font-medium">
-                      <span>DP Rp {formatRupiah(item.dpAmount)}</span>
-                      <span className="text-slate-300 mx-1">·</span>
-                      <span className="font-bold text-rose-600">
-                        Kurang Rp {formatRupiah(item.remainingAmount)}
-                      </span>
-                    </div>
-                  </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-900" title={d.itemName}>
+                    {d.itemName}
+                  </p>
+                  <p className="truncate text-xs text-slate-500">
+                    {d.buyerName || "Tanpa nama"} · kurang {formatRupiah(d.remainingAmount)}
+                    <span className="sm:hidden"> · {terlambatLabel}</span>
+                  </p>
                 </div>
 
-                {/* Tombol Aksi */}
-                <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 shrink-0">
-                  {/* Tombol WhatsApp */}
-                  {item.isPhoneValid && item.waLink ? (
+                <span className="hidden shrink-0 whitespace-nowrap text-xs text-slate-500 sm:block">
+                  {terlambatLabel}
+                </span>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {d.isPhoneValid && d.waLink && (
                     <a
-                      href={item.waLink}
+                      href={d.waLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-colors min-h-[44px]"
-                      aria-label={`Hubungi pembeli ${item.buyerName || ""} via WhatsApp`}
+                      className="inline-flex min-h-[36px] items-center rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                      aria-label={`Hubungi pembeli ${d.buyerName || ""} via WhatsApp`}
                     >
-                      <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span>Hubungi via WA</span>
+                      Hubungi
                     </a>
-                  ) : (
-                    <button
-                      disabled
-                      className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-400 text-xs font-medium cursor-not-allowed min-h-[44px]"
-                      title={item.phoneError || "Nomor WhatsApp belum tercatat"}
-                    >
-                      <PhoneOff className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                      <span>Nomor belum ada</span>
-                    </button>
                   )}
 
-                  {/* Tombol Sudah Dihubungi */}
                   <button
-                    onClick={() => setSelectedTx(item)}
+                    type="button"
+                    onClick={() => setSelectedTx(d)}
                     disabled={isPending}
-                    className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold transition-colors min-h-[44px]"
+                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 px-2.5 sm:px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50"
+                    title="Tandai sudah dihubungi"
+                    aria-label={`Tandai ${d.itemName} sudah dihubungi`}
                   >
-                    <Check className="w-4 h-4 text-slate-500 shrink-0" aria-hidden="true" />
-                    <span>Sudah dihubungi</span>
+                    <Check className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+                    <span className="hidden sm:inline">Sudah dihubungi</span>
                   </button>
-
-                  {/* Aksi Tambahan untuk OVERDUE: Buka Transaksi */}
-                  {item.stage === "OVERDUE" && (
-                    <Link
-                      href="/mbg-internal-portal/reports"
-                      className="inline-flex items-center justify-center px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors min-h-[44px]"
-                    >
-                      <span>Buka transaksi</span>
-                    </Link>
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-6 text-center text-slate-500 text-sm">
-            Semua transaksi DP yang jatuh tempo telah dihubungi untuk hari ini.
-          </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Baris Jika N > 3 */}
+        {sisa > 0 && (
+          <Link
+            href={laporanHref}
+            className="block border-t border-slate-100 px-4 py-3 text-[13px] font-medium text-blue-600 hover:underline"
+          >
+            Lihat {sisa} lainnya
+          </Link>
         )}
 
-        {/* Sub-Daftar Collapsible: Menunggu Pembeli */}
+        {/* Footer: Menunggu konfirmasi pembeli */}
         {menungguPembeli.length > 0 && (
-          <details className="group border-t border-slate-200 bg-slate-50/50">
-            <summary className="flex items-center justify-between px-5 py-3 cursor-pointer select-none text-xs font-bold text-slate-600 hover:text-slate-900 min-h-[44px]">
+          <>
+            <button
+              type="button"
+              aria-expanded={buka}
+              onClick={() => setBuka(!buka)}
+              className="flex min-h-11 w-full items-center justify-between border-t border-slate-100 px-4 text-left text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
+            >
               <span>Menunggu konfirmasi pembeli ({menungguPembeli.length})</span>
-              <div className="flex items-center gap-1 text-slate-400 group-hover:text-slate-600 transition-colors">
-                <span className="text-[11px] font-normal group-open:hidden">Tampilkan</span>
-                <ChevronDown className="w-4 h-4 transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
-              </div>
-            </summary>
-
-            <div className="divide-y divide-slate-100 border-t border-slate-100 bg-white">
-              {menungguPembeli.map((item) => (
-                <div
-                  key={item.id}
-                  className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600 opacity-80 hover:opacity-100 transition-opacity"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      {renderStageChip(item)}
-                      <span className="font-bold text-slate-900 truncate">{item.itemName}</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      Pembeli: <span className="font-semibold text-slate-700">{item.buyerName || "-"}</span> · 
-                      Sisa Rp {formatRupiah(item.remainingAmount)} · 
-                      Dihubungi {item.contactCount}x ({item.lastContactStage})
-                    </p>
-                  </div>
-
-                  {item.isPhoneValid && item.waLink && (
-                    <a
-                      href={item.waLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors min-h-[36px]"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
-                      <span>Hubungi ulang</span>
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          </details>
+              <ChevronRight
+                className={`h-4 w-4 text-slate-400 transition-transform ${buka ? "rotate-90" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
+            {buka && <DaftarMenunggu items={menungguPembeli} />}
+          </>
         )}
-      </div>
+      </section>
 
-      {/* Modal Dialog Konfirmasi Modern */}
+      {/* Modal Dialog Konfirmasi Kontak */}
       <ConfirmDialog
         isOpen={Boolean(selectedTx)}
         title="Tandai Sudah Dihubungi?"
